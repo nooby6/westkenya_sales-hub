@@ -30,10 +30,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Plus, Search, Package } from 'lucide-react';
+import { Truck, Plus, Search, Package, Camera, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CameraCapture } from '@/components/shipments/CameraCapture';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -48,6 +50,9 @@ export default function Shipments() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [driverPhoto, setDriverPhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const { data: shipments, isLoading } = useQuery({
     queryKey: ['shipments', statusFilter],
@@ -85,6 +90,29 @@ export default function Shipments() {
     }
   });
 
+  const uploadDriverPhoto = async (base64Image: string): Promise<string | null> => {
+    try {
+      const response = await fetch(base64Image);
+      const blob = await response.blob();
+      const filename = `driver-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+      const { error } = await supabase.storage
+        .from('driver-photos')
+        .upload(filename, blob, { contentType: 'image/jpeg' });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from('driver-photos')
+        .getPublicUrl(filename);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      return null;
+    }
+  };
+
   const createShipmentMutation = useMutation({
     mutationFn: async (shipmentData: {
       order_id: string;
@@ -92,6 +120,7 @@ export default function Shipments() {
       driver_id_number: string;
       driver_phone: string;
       vehicle_number_plate: string;
+      driver_photo_url?: string;
       notes?: string;
     }) => {
       const { error } = await supabase
@@ -103,7 +132,6 @@ export default function Shipments() {
         });
       if (error) throw error;
 
-      // Update order status to dispatched
       await supabase
         .from('sales_orders')
         .update({ status: 'dispatched' })
@@ -113,6 +141,7 @@ export default function Shipments() {
       queryClient.invalidateQueries({ queryKey: ['shipments'] });
       queryClient.invalidateQueries({ queryKey: ['dispatchable-orders'] });
       setIsCreateOpen(false);
+      setDriverPhoto(null);
       toast.success('Shipment created successfully');
     },
     onError: (error) => {
@@ -150,18 +179,38 @@ export default function Shipments() {
     }
   });
 
-  const handleCreateShipment = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateShipment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
+    let photoUrl: string | undefined;
+
+    if (driverPhoto) {
+      setIsUploadingPhoto(true);
+      try {
+        const uploadedUrl = await uploadDriverPhoto(driverPhoto);
+        if (uploadedUrl) {
+          photoUrl = uploadedUrl;
+        }
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    }
+
     createShipmentMutation.mutate({
       order_id: formData.get('order_id') as string,
       driver_name: formData.get('driver_name') as string,
       driver_id_number: formData.get('driver_id_number') as string,
       driver_phone: formData.get('driver_phone') as string,
       vehicle_number_plate: formData.get('vehicle_number_plate') as string,
+      driver_photo_url: photoUrl,
       notes: formData.get('notes') as string,
     });
+  };
+
+  const handlePhotoCapture = (imageData: string) => {
+    setDriverPhoto(imageData);
+    toast.success('Driver photo captured');
   };
 
   const filteredShipments = shipments?.filter(shipment =>
@@ -171,9 +220,9 @@ export default function Shipments() {
   );
 
   const activeShipments = shipments?.filter(s => s.status !== 'delivered').length || 0;
-  const deliveredToday = shipments?.filter(s => 
-    s.status === 'delivered' && 
-    s.delivered_at && 
+  const deliveredToday = shipments?.filter(s =>
+    s.status === 'delivered' &&
+    s.delivered_at &&
     new Date(s.delivered_at).toDateString() === new Date().toDateString()
   ).length || 0;
 
@@ -233,18 +282,58 @@ export default function Shipments() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label>Driver Photo</Label>
+                  <div className="flex items-center gap-4">
+                    {driverPhoto ? (
+                      <div className="relative">
+                        <img
+                          src={driverPhoto}
+                          alt="Driver"
+                          className="w-20 h-20 rounded-lg object-cover border"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                          onClick={() => setDriverPhoto(null)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center">
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCameraOpen(true)}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      {driverPhoto ? 'Retake Photo' : 'Capture Photo'}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <Label>Notes (Optional)</Label>
                   <Textarea name="notes" placeholder="Special delivery instructions..." />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => { setIsCreateOpen(false); setDriverPhoto(null); }}>
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={createShipmentMutation.isPending}>
-                    {createShipmentMutation.isPending ? 'Creating...' : 'Create Shipment'}
+                  <Button type="submit" disabled={createShipmentMutation.isPending || isUploadingPhoto}>
+                    {isUploadingPhoto ? 'Uploading photo...' : createShipmentMutation.isPending ? 'Creating...' : 'Create Shipment'}
                   </Button>
                 </div>
               </form>
+              <CameraCapture
+                isOpen={isCameraOpen}
+                onClose={() => setIsCameraOpen(false)}
+                onCapture={handlePhotoCapture}
+              />
             </DialogContent>
           </Dialog>
         )}
@@ -359,9 +448,19 @@ export default function Shipments() {
                       {shipment.sales_orders?.order_number}
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{shipment.driver_name}</p>
-                        <p className="text-xs text-muted-foreground">{shipment.driver_phone}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          {shipment.driver_photo_url ? (
+                            <AvatarImage src={shipment.driver_photo_url} alt={shipment.driver_name} />
+                          ) : null}
+                          <AvatarFallback>
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{shipment.driver_name}</p>
+                          <p className="text-xs text-muted-foreground">{shipment.driver_phone}</p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{shipment.vehicle_number_plate}</TableCell>
