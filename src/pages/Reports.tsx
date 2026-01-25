@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BarChart3, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { BarChart3, Download, FileText, Package, Truck } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import {
   BarChart,
@@ -27,6 +27,13 @@ import {
   Cell,
 } from 'recharts';
 import { toast } from 'sonner';
+import {
+  generateOrdersPDF,
+  generateInventoryPDF,
+  generateShipmentsPDF,
+  downloadPDF,
+} from '@/lib/pdf-generator';
+import { AISuggestionsPanel } from '@/components/ai/AISuggestionsPanel';
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -60,9 +67,26 @@ export default function Reports() {
         .from('inventory')
         .select(`
           *,
-          products (name, unit_price),
+          products (name, sku, unit_price),
           depots (name)
         `);
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: shipmentsData } = useQuery({
+    queryKey: ['shipments-report', dateFrom, dateTo],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shipments')
+        .select(`
+          *,
+          sales_orders (order_number, customers (name))
+        `)
+        .gte('created_at', dateFrom)
+        .lte('created_at', dateTo + 'T23:59:59')
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     }
@@ -106,35 +130,64 @@ export default function Reports() {
   const totalOrders = salesData?.length || 0;
   const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    if (format === 'csv') {
-      // Generate CSV
-      if (!salesData || salesData.length === 0) {
-        toast.error('No data to export');
-        return;
+  const handleExportCSV = () => {
+    if (!salesData || salesData.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+    
+    const headers = ['Order Number', 'Customer', 'Depot', 'Amount', 'Status', 'Date'];
+    const rows = salesData.map(order => [
+      order.order_number,
+      order.customers?.name || '',
+      order.depots?.name || '',
+      order.total_amount,
+      order.status,
+      order.order_date,
+    ]);
+    
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales-report-${dateFrom}-to-${dateTo}.csv`;
+    a.click();
+    
+    toast.success('CSV report downloaded');
+  };
+
+  const handleExportPDF = (type: 'orders' | 'inventory' | 'shipments') => {
+    const dateRange = { from: dateFrom, to: dateTo };
+    
+    try {
+      if (type === 'orders') {
+        if (!salesData || salesData.length === 0) {
+          toast.error('No orders data to export');
+          return;
+        }
+        const doc = generateOrdersPDF(salesData as any, dateRange);
+        downloadPDF(doc, `orders-report-${dateFrom}-to-${dateTo}.pdf`);
+      } else if (type === 'inventory') {
+        if (!inventoryData || inventoryData.length === 0) {
+          toast.error('No inventory data to export');
+          return;
+        }
+        const doc = generateInventoryPDF(inventoryData as any);
+        downloadPDF(doc, `inventory-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      } else if (type === 'shipments') {
+        if (!shipmentsData || shipmentsData.length === 0) {
+          toast.error('No shipments data to export');
+          return;
+        }
+        const doc = generateShipmentsPDF(shipmentsData as any, dateRange);
+        downloadPDF(doc, `shipments-report-${dateFrom}-to-${dateTo}.pdf`);
       }
       
-      const headers = ['Order Number', 'Customer', 'Depot', 'Amount', 'Status', 'Date'];
-      const rows = salesData.map(order => [
-        order.order_number,
-        order.customers?.name || '',
-        order.depots?.name || '',
-        order.total_amount,
-        order.status,
-        order.order_date,
-      ]);
-      
-      const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sales-report-${dateFrom}-to-${dateTo}.csv`;
-      a.click();
-      
-      toast.success('CSV report downloaded');
-    } else {
-      toast.info('PDF export would be implemented with a PDF library');
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} PDF report downloaded`);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF report');
     }
   };
 
@@ -145,14 +198,22 @@ export default function Reports() {
           <h1 className="text-2xl font-bold text-foreground">Reports & Analytics</h1>
           <p className="text-muted-foreground">Generate and export business reports</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => handleExport('csv')}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
-          <Button variant="outline" onClick={() => handleExport('pdf')}>
+          <Button variant="outline" onClick={() => handleExportPDF('orders')}>
             <FileText className="h-4 w-4 mr-2" />
-            Export PDF
+            Orders PDF
+          </Button>
+          <Button variant="outline" onClick={() => handleExportPDF('inventory')}>
+            <Package className="h-4 w-4 mr-2" />
+            Inventory PDF
+          </Button>
+          <Button variant="outline" onClick={() => handleExportPDF('shipments')}>
+            <Truck className="h-4 w-4 mr-2" />
+            Shipments PDF
           </Button>
         </div>
       </div>
@@ -328,6 +389,9 @@ export default function Reports() {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Insights */}
+      <AISuggestionsPanel />
     </div>
   );
 }
