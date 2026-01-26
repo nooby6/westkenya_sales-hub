@@ -9,7 +9,8 @@ import {
   BarChart3,
   LogOut,
   Building2,
-  UserCircle
+  UserCircle,
+  RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Inventory', href: '/inventory', icon: Package },
   { name: 'Shipments', href: '/shipments', icon: Truck },
   { name: 'Customers', href: '/customers', icon: Users },
+  { name: 'Sales Returns', href: '/returns', icon: RotateCcw },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
 ];
 
@@ -40,7 +42,7 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col bg-card border-r border-border">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center transition-transform duration-300 hover:scale-110">
           <span className="text-primary-foreground font-bold text-sm">KS</span>
         </div>
         <div>
@@ -50,26 +52,27 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
         <div className="mb-2">
           <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Main Menu
           </p>
         </div>
-        {navigation.map((item) => {
+        {navigation.map((item, index) => {
           const isActive = location.pathname === item.href;
           return (
             <NavLink
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-fade-in',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-foreground hover:bg-accent hover:text-accent-foreground hover:translate-x-1'
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
               {item.name}
             </NavLink>
           );
@@ -82,20 +85,21 @@ export function Sidebar() {
                 Administration
               </p>
             </div>
-            {adminNavigation.map((item) => {
+            {adminNavigation.map((item, index) => {
               const isActive = location.pathname === item.href;
               return (
                 <NavLink
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 animate-fade-in',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-accent hover:text-accent-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'text-foreground hover:bg-accent hover:text-accent-foreground hover:translate-x-1'
                   )}
+                  style={{ animationDelay: `${(navigation.length + index) * 50}ms` }}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
                   {item.name}
                 </NavLink>
               );
@@ -106,8 +110,8 @@ export function Sidebar() {
 
       {/* User Section */}
       <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="flex items-center gap-3 mb-3 animate-fade-in">
+          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-300 hover:scale-110">
             <UserCircle className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
@@ -122,7 +126,7 @@ export function Sidebar() {
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-start gap-2"
+          className="w-full justify-start gap-2 transition-all duration-300 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
           onClick={signOut}
         >
           <LogOut className="h-4 w-4" />
