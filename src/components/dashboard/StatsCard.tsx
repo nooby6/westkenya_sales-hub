@@ -1,5 +1,5 @@
-import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
-import { AnimatedCard, AnimatedCardContent } from '@/components/ui/animated-card';
+import { LucideIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface StatsCardProps {
@@ -11,41 +11,35 @@ interface StatsCardProps {
     value: number;
     isPositive: boolean;
   };
-  delay?: number;
+  className?: string;
 }
 
-export function StatsCard({ title, value, description, icon: Icon, trend, delay = 0 }: StatsCardProps) {
+export function StatsCard({ title, value, description, icon: Icon, trend, className }: StatsCardProps) {
   return (
-    <AnimatedCard delay={delay} className="overflow-hidden group">
-      <AnimatedCardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
+    <Card className={cn("relative overflow-hidden", className)}>
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div>
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold text-foreground transition-transform duration-300 group-hover:scale-105">
-              {value}
-            </p>
+            <h3 className="mt-2 text-3xl font-bold text-foreground">{value}</h3>
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
             )}
             {trend && (
               <div className={cn(
-                "flex items-center gap-1 text-xs font-medium transition-all duration-300",
-                trend.isPositive ? "text-primary" : "text-destructive"
+                "mt-2 flex items-center text-sm font-medium",
+                trend.isPositive ? "text-chart-1" : "text-destructive"
               )}>
-                {trend.isPositive ? (
-                  <TrendingUp className="h-3 w-3 animate-pulse" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 animate-pulse" />
-                )}
                 <span>{trend.isPositive ? '+' : ''}{trend.value}%</span>
+                <span className="ml-1 text-muted-foreground">vs last month</span>
               </div>
             )}
           </div>
-          <div className="p-3 rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground">
-            <Icon className="h-6 w-6" />
+          <div className="rounded-lg bg-primary/10 p-3">
+            <Icon className="h-6 w-6 text-primary" />
           </div>
         </div>
-      </AnimatedCardContent>
-    </AnimatedCard>
+      </CardContent>
+    </Card>
   );
 }

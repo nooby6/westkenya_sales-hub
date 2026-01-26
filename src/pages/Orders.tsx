@@ -29,20 +29,19 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AnimatedCard, AnimatedCardContent, AnimatedCardHeader, AnimatedCardTitle } from '@/components/ui/animated-card';
-import { Plus, Search, Eye, ShoppingCart } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatMetricTonnes } from '@/lib/unit-converter';
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  dispatched: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
+  processing: 'bg-purple-100 text-purple-800 border-purple-200',
+  dispatched: 'bg-orange-100 text-orange-800 border-orange-200',
+  delivered: 'bg-green-100 text-green-800 border-green-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
 };
 
 export default function Orders() {
@@ -212,22 +211,19 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between animate-fade-in">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShoppingCart className="h-6 w-6 text-primary" />
-            Sales Orders
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">Sales Orders</h1>
           <p className="text-muted-foreground">Manage and track all sales orders</p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 transition-all duration-300 hover:scale-105">
-              <Plus className="h-4 w-4" />
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
               New Order
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg animate-scale-in">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Create New Order</DialogTitle>
             </DialogHeader>
@@ -235,7 +231,7 @@ export default function Orders() {
               <div className="space-y-2">
                 <Label>Customer</Label>
                 <Select name="customer_id" required>
-                  <SelectTrigger className="transition-all duration-300">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
@@ -250,7 +246,7 @@ export default function Orders() {
               <div className="space-y-2">
                 <Label>Depot</Label>
                 <Select name="depot_id" required>
-                  <SelectTrigger className="transition-all duration-300">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select depot" />
                   </SelectTrigger>
                   <SelectContent>
@@ -265,7 +261,7 @@ export default function Orders() {
               <div className="space-y-2">
                 <Label>Product</Label>
                 <Select name="product_id" required>
-                  <SelectTrigger className="transition-all duration-300">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,34 +275,18 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input 
-                  name="quantity" 
-                  type="number" 
-                  min="1" 
-                  defaultValue="1" 
-                  required 
-                  className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
-                />
+                <Input name="quantity" type="number" min="1" defaultValue="1" required />
               </div>
               <div className="space-y-2">
                 <Label>Notes (Optional)</Label>
-                <Textarea 
-                  name="notes" 
-                  placeholder="Add any special instructions..."
-                  className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
-                />
+                <Textarea name="notes" placeholder="Add any special instructions..." />
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createOrderMutation.isPending} className="transition-all duration-300">
-                  {createOrderMutation.isPending ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                      Creating...
-                    </span>
-                  ) : 'Create Order'}
+                <Button type="submit" disabled={createOrderMutation.isPending}>
+                  {createOrderMutation.isPending ? 'Creating...' : 'Create Order'}
                 </Button>
               </div>
             </form>
@@ -315,8 +295,8 @@ export default function Orders() {
       </div>
 
       {/* Filters */}
-      <AnimatedCard delay={100}>
-        <AnimatedCardContent className="pt-6">
+      <Card>
+        <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -324,11 +304,11 @@ export default function Orders() {
                 placeholder="Search orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 transition-all duration-300 focus:ring-2 focus:ring-primary/20"
+                className="pl-10"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] transition-all duration-300">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -342,99 +322,88 @@ export default function Orders() {
               </SelectContent>
             </Select>
           </div>
-        </AnimatedCardContent>
-      </AnimatedCard>
+        </CardContent>
+      </Card>
 
       {/* Orders Table */}
-      <AnimatedCard delay={200}>
-        <AnimatedCardHeader>
-          <AnimatedCardTitle>Orders List</AnimatedCardTitle>
-        </AnimatedCardHeader>
-        <AnimatedCardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Orders List</CardTitle>
+        </CardHeader>
+        <CardContent>
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full animate-pulse" />
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           ) : !filteredOrders || filteredOrders.length === 0 ? (
-            <div className="text-center py-8 animate-fade-in">
-              <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+            <div className="text-center py-8">
               <p className="text-muted-foreground">No orders found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Depot</TableHead>
-                    <TableHead>Amount (MT)</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order, index) => (
-                    <TableRow 
-                      key={order.id}
-                      className="animate-fade-in transition-colors hover:bg-muted/50"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <TableCell className="font-medium">{order.order_number}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{order.customers?.name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customers?.company_name}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{order.depots?.name}</TableCell>
-                      <TableCell>{formatMetricTonnes(Number(order.total_amount))}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`${statusColors[order.status]} transition-all duration-300`}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{format(new Date(order.order_date), 'MMM dd, yyyy')}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {(isAdmin || isManager) && order.status !== 'cancelled' && order.status !== 'delivered' && (
-                            <Select
-                              value={order.status}
-                              onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status: status as "pending" | "confirmed" | "processing" | "dispatched" | "delivered" | "cancelled" })}
-                            >
-                              <SelectTrigger className="h-8 w-[130px] transition-all duration-300">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
-                                <SelectItem value="dispatched">Dispatched</SelectItem>
-                                <SelectItem value="delivered">Delivered</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="transition-all duration-300 hover:bg-primary hover:text-primary-foreground"
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Depot</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.order_number}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{order.customers?.name}</p>
+                        <p className="text-xs text-muted-foreground">{order.customers?.company_name}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{order.depots?.name}</TableCell>
+                    <TableCell>KES {Number(order.total_amount).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={statusColors[order.status]}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(order.order_date), 'MMM dd, yyyy')}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {(isAdmin || isManager) && order.status !== 'cancelled' && order.status !== 'delivered' && (
+                          <Select
+                            value={order.status}
+                            onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status: status as "pending" | "confirmed" | "processing" | "dispatched" | "delivered" | "cancelled" })}
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                            <SelectTrigger className="h-8 w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="processing">Processing</SelectItem>
+                              <SelectItem value="dispatched">Dispatched</SelectItem>
+                              <SelectItem value="delivered">Delivered</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </AnimatedCardContent>
-      </AnimatedCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

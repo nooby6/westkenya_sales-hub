@@ -1,7 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
-import { kgToMetricTonnes } from './unit-converter';
 
 interface OrderData {
   order_number: string;
@@ -14,7 +13,7 @@ interface OrderData {
 
 interface InventoryData {
   quantity: number;
-  products?: { name: string; sku: string; unit_price: number; sugar_type?: string };
+  products?: { name: string; sku: string; unit_price: number };
   depots?: { name: string };
 }
 
@@ -30,18 +29,6 @@ interface ShipmentData {
   sales_orders?: { order_number: string; customers?: { name: string } };
 }
 
-const sugarTypeWeightMap: Record<string, number> = {
-  'bale_2x10': 20,
-  'bale_1x20': 20,
-  'bale_1x12': 12,
-  'bag_50kg': 50,
-  'bag_25kg': 25,
-};
-
-const getSugarTypeWeight = (type?: string): number => {
-  return sugarTypeWeightMap[type || ''] || 50;
-};
-
 export const generateOrdersPDF = (orders: OrderData[], dateRange: { from: string; to: string }) => {
   const doc = new jsPDF();
   
@@ -55,9 +42,8 @@ export const generateOrdersPDF = (orders: OrderData[], dateRange: { from: string
   doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 14, 30);
   doc.text(`Date Range: ${dateRange.from} to ${dateRange.to}`, 14, 36);
   
-  // Summary stats - converted to metric tonnes
-  const totalRevenueKg = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
-  const totalRevenueMT = kgToMetricTonnes(totalRevenueKg);
+  // Summary stats
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
   const statusCounts = orders.reduce((acc, o) => {
     acc[o.status] = (acc[o.status] || 0) + 1;
     return acc;
@@ -68,7 +54,7 @@ export const generateOrdersPDF = (orders: OrderData[], dateRange: { from: string
   doc.text('Summary', 14, 48);
   doc.setFontSize(10);
   doc.text(`Total Orders: ${orders.length}`, 14, 56);
-  doc.text(`Total Revenue: ${totalRevenueMT.toFixed(2)} Metric Tonnes`, 14, 62);
+  doc.text(`Total Revenue: KES ${totalRevenue.toLocaleString()}`, 14, 62);
   doc.text(`Status Breakdown: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(', ')}`, 14, 68);
   
   // Table
@@ -76,13 +62,13 @@ export const generateOrdersPDF = (orders: OrderData[], dateRange: { from: string
     order.order_number,
     order.customers?.name || '-',
     order.depots?.name || '-',
-    `${kgToMetricTonnes(Number(order.total_amount)).toFixed(2)} MT`,
+    `KES ${Number(order.total_amount).toLocaleString()}`,
     order.status.toUpperCase(),
     format(new Date(order.order_date), 'MMM dd, yyyy'),
   ]);
   
   autoTable(doc, {
-    head: [['Order #', 'Customer', 'Depot', 'Amount (MT)', 'Status', 'Date']],
+    head: [['Order #', 'Customer', 'Depot', 'Amount', 'Status', 'Date']],
     body: tableData,
     startY: 76,
     styles: { fontSize: 9 },
@@ -119,13 +105,9 @@ export const generateInventoryPDF = (inventory: InventoryData[]) => {
   doc.setTextColor(100);
   doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 14, 30);
   
-  // Summary - all in metric tonnes
+  // Summary
   const totalItems = inventory.length;
-  const totalWeightKg = inventory.reduce((sum, i) => {
-    const unitWeight = getSugarTypeWeight(i.products?.sugar_type);
-    return sum + (i.quantity * unitWeight);
-  }, 0);
-  const totalWeightMT = kgToMetricTonnes(totalWeightKg);
+  const totalUnits = inventory.reduce((sum, i) => sum + i.quantity, 0);
   const totalValue = inventory.reduce(
     (sum, i) => sum + i.quantity * Number(i.products?.unit_price || 0),
     0
@@ -139,27 +121,22 @@ export const generateInventoryPDF = (inventory: InventoryData[]) => {
   doc.text('Summary', 14, 42);
   doc.setFontSize(10);
   doc.text(`Total Products: ${totalItems}`, 14, 50);
-  doc.text(`Total Stock: ${totalWeightMT.toFixed(2)} Metric Tonnes`, 14, 56);
+  doc.text(`Total Units in Stock: ${totalUnits.toLocaleString()}`, 14, 56);
   doc.text(`Total Inventory Value: KES ${totalValue.toLocaleString()}`, 14, 62);
   doc.text(`Low Stock Alerts: ${lowStockItems}`, 14, 68);
   
   // Table
-  const tableData = inventory.map(item => {
-    const unitWeight = getSugarTypeWeight(item.products?.sugar_type);
-    const totalKg = item.quantity * unitWeight;
-    const totalMT = kgToMetricTonnes(totalKg);
-    return [
-      item.products?.sku || '-',
-      item.products?.name || '-',
-      item.depots?.name || '-',
-      item.quantity.toLocaleString(),
-      `${totalMT.toFixed(2)} MT`,
-      `KES ${(item.quantity * Number(item.products?.unit_price || 0)).toLocaleString()}`,
-    ];
-  });
+  const tableData = inventory.map(item => [
+    item.products?.sku || '-',
+    item.products?.name || '-',
+    item.depots?.name || '-',
+    item.quantity.toLocaleString(),
+    `KES ${Number(item.products?.unit_price || 0).toLocaleString()}`,
+    `KES ${(item.quantity * Number(item.products?.unit_price || 0)).toLocaleString()}`,
+  ]);
   
   autoTable(doc, {
-    head: [['SKU', 'Product', 'Depot', 'Units', 'Weight (MT)', 'Total Value']],
+    head: [['SKU', 'Product', 'Depot', 'Quantity', 'Unit Price', 'Total Value']],
     body: tableData,
     startY: 76,
     styles: { fontSize: 9 },

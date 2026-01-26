@@ -11,15 +11,14 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatMetricTonnes } from '@/lib/unit-converter';
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  dispatched: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  confirmed: 'bg-blue-100 text-blue-800 border-blue-200',
+  processing: 'bg-purple-100 text-purple-800 border-purple-200',
+  dispatched: 'bg-orange-100 text-orange-800 border-orange-200',
+  delivered: 'bg-green-100 text-green-800 border-green-200',
+  cancelled: 'bg-red-100 text-red-800 border-red-200',
 };
 
 export function RecentOrdersTable() {
@@ -45,7 +44,7 @@ export function RecentOrdersTable() {
     return (
       <div className="space-y-3">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full animate-pulse" />
+          <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
     );
@@ -53,7 +52,7 @@ export function RecentOrdersTable() {
 
   if (!orders || orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-8 text-center animate-fade-in">
+      <div className="flex flex-col items-center justify-center py-8 text-center">
         <p className="text-muted-foreground">No orders yet</p>
         <p className="text-sm text-muted-foreground">Create your first sales order to get started</p>
       </div>
@@ -67,18 +66,14 @@ export function RecentOrdersTable() {
           <TableHead>Order #</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Depot</TableHead>
-          <TableHead>Amount (MT)</TableHead>
+          <TableHead>Amount</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Date</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {orders.map((order, index) => (
-          <TableRow 
-            key={order.id} 
-            className="animate-fade-in transition-colors hover:bg-muted/50"
-            style={{ animationDelay: `${index * 80}ms` }}
-          >
+        {orders.map((order) => (
+          <TableRow key={order.id}>
             <TableCell className="font-medium">{order.order_number}</TableCell>
             <TableCell>
               <div>
@@ -87,9 +82,9 @@ export function RecentOrdersTable() {
               </div>
             </TableCell>
             <TableCell>{order.depots?.name}</TableCell>
-            <TableCell>{formatMetricTonnes(Number(order.total_amount))}</TableCell>
+            <TableCell>KES {Number(order.total_amount).toLocaleString()}</TableCell>
             <TableCell>
-              <Badge variant="outline" className={`${statusColors[order.status]} transition-all duration-300`}>
+              <Badge variant="outline" className={statusColors[order.status]}>
                 {order.status}
               </Badge>
             </TableCell>
