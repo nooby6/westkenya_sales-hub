@@ -239,6 +239,7 @@ export type Database = {
           min_stock_level: number | null
           name: string
           sku: string
+          sugar_type: Database["public"]["Enums"]["sugar_type"] | null
           unit_of_measure: string
           unit_price: number
           updated_at: string
@@ -251,6 +252,7 @@ export type Database = {
           min_stock_level?: number | null
           name: string
           sku: string
+          sugar_type?: Database["public"]["Enums"]["sugar_type"] | null
           unit_of_measure?: string
           unit_price: number
           updated_at?: string
@@ -263,6 +265,7 @@ export type Database = {
           min_stock_level?: number | null
           name?: string
           sku?: string
+          sugar_type?: Database["public"]["Enums"]["sugar_type"] | null
           unit_of_measure?: string
           unit_price?: number
           updated_at?: string
@@ -355,6 +358,66 @@ export type Database = {
             columns: ["depot_id"]
             isOneToOne: false
             referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_returns: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          processed_by: string | null
+          product_id: string
+          quantity: number
+          return_date: string
+          return_reason: string
+          status: string
+          updated_at: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          processed_by?: string | null
+          product_id: string
+          quantity: number
+          return_date?: string
+          return_reason: string
+          status?: string
+          updated_at?: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          processed_by?: string | null
+          product_id?: string
+          quantity?: number
+          return_date?: string
+          return_reason?: string
+          status?: string
+          updated_at?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_returns_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_returns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -464,6 +527,12 @@ export type Database = {
         | "delivered"
         | "cancelled"
       shipment_status: "pending" | "loading" | "in_transit" | "delivered"
+      sugar_type:
+        | "bale_2x10"
+        | "bale_1x20"
+        | "bale_1x12"
+        | "bag_50kg"
+        | "bag_25kg"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -601,6 +670,13 @@ export const Constants = {
         "cancelled",
       ],
       shipment_status: ["pending", "loading", "in_transit", "delivered"],
+      sugar_type: [
+        "bale_2x10",
+        "bale_1x20",
+        "bale_1x12",
+        "bag_50kg",
+        "bag_25kg",
+      ],
     },
   },
 } as const
