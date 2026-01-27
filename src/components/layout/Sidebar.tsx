@@ -9,7 +9,8 @@ import {
   BarChart3,
   LogOut,
   Building2,
-  UserCircle
+  UserCircle,
+  RotateCcw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Sales Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Inventory', href: '/inventory', icon: Package },
   { name: 'Shipments', href: '/shipments', icon: Truck },
+  { name: 'Sales Returns', href: '/sales-returns', icon: RotateCcw },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
 ];
@@ -56,20 +58,22 @@ export function Sidebar() {
             Main Menu
           </p>
         </div>
-        {navigation.map((item) => {
+        {navigation.map((item, index) => {
           const isActive = location.pathname === item.href;
           return (
             <NavLink
               key={item.name}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                'hover:translate-x-1',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-md'
                   : 'text-foreground hover:bg-accent hover:text-accent-foreground'
               )}
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive && "scale-110")} />
               {item.name}
             </NavLink>
           );
@@ -82,20 +86,22 @@ export function Sidebar() {
                 Administration
               </p>
             </div>
-            {adminNavigation.map((item) => {
+            {adminNavigation.map((item, index) => {
               const isActive = location.pathname === item.href;
               return (
                 <NavLink
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+                    'hover:translate-x-1',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-md'
                       : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
+                  style={{ animationDelay: `${(navigation.length + index) * 50}ms` }}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive && "scale-110")} />
                   {item.name}
                 </NavLink>
               );

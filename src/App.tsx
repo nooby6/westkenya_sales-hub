@@ -18,6 +18,7 @@ import Products from "./pages/Products";
 import Depots from "./pages/Depots";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import SalesReturns from "./pages/SalesReturns";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/orders" element={<Orders />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/shipments" element={<Shipments />} />
+              <Route path="/sales-returns" element={<SalesReturns />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/products" element={<Products />} />
