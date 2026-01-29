@@ -5,6 +5,9 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { SalesChart } from '@/components/dashboard/SalesChart';
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable';
 import { InventoryAlerts } from '@/components/dashboard/InventoryAlerts';
+import { CustomerGrowthChart } from '@/components/dashboard/CustomerGrowthChart';
+import { RevenueByProductChart } from '@/components/dashboard/RevenueByProductChart';
+import { ShipmentTrendsChart } from '@/components/dashboard/ShipmentTrendsChart';
 import { 
   AnimatedCard, 
   AnimatedCardContent, 
@@ -289,6 +292,13 @@ export default function Dashboard() {
         <div className="animate-fade-in" style={{ animationDelay: '900ms' }}>
           <InventoryAlerts />
         </div>
+      </div>
+
+      {/* Additional Analytics Row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <CustomerGrowthChart />
+        <RevenueByProductChart />
+        <ShipmentTrendsChart />
       </div>
 
       {/* Recent Orders */}
