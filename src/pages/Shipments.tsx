@@ -35,7 +35,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CameraCapture } from '@/components/shipments/CameraCapture';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { DriverAvatar } from '@/components/shipments/DriverAvatar';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -102,13 +102,30 @@ export default function Shipments() {
 
       if (error) throw error;
 
-      const { data: urlData } = supabase.storage
-        .from('driver-photos')
-        .getPublicUrl(filename);
-
-      return urlData.publicUrl;
+      // Return the filename to store in DB - we'll fetch signed URLs when displaying
+      return filename;
     } catch (error) {
       console.error('Error uploading photo:', error);
+      return null;
+    }
+  };
+
+  // Helper to get signed URL for driver photo
+  const getDriverPhotoUrl = async (photoPath: string): Promise<string | null> => {
+    if (!photoPath) return null;
+    
+    // If it's already a full URL (legacy data), return as-is
+    if (photoPath.startsWith('http')) return photoPath;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from('driver-photos')
+        .createSignedUrl(photoPath, 3600); // 1 hour expiry
+      
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error getting signed URL:', error);
       return null;
     }
   };
@@ -449,14 +466,10 @@ export default function Shipments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          {shipment.driver_photo_url ? (
-                            <AvatarImage src={shipment.driver_photo_url} alt={shipment.driver_name} />
-                          ) : null}
-                          <AvatarFallback>
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <DriverAvatar 
+                          photoUrl={shipment.driver_photo_url} 
+                          driverName={shipment.driver_name} 
+                        />
                         <div>
                           <p className="font-medium">{shipment.driver_name}</p>
                           <p className="text-xs text-muted-foreground">{shipment.driver_phone}</p>

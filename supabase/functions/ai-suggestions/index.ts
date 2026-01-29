@@ -26,7 +26,61 @@ serve(async (req) => {
   }
 
   try {
+    // Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { type, inventoryData, salesData } = await req.json();
+    
+    // Input validation
+    if (!type || typeof type !== 'string') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request: type is required' }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!['stock_replenishment', 'sales_trends'].includes(type)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid type: must be stock_replenishment or sales_trends' }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (type === 'stock_replenishment') {
+      if (!inventoryData || !Array.isArray(inventoryData)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid request: inventoryData must be an array' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (inventoryData.length > 100) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Too many inventory items (max 100)' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    if (type === 'sales_trends') {
+      if (!salesData || !Array.isArray(salesData)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid request: salesData must be an array' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (salesData.length > 200) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Too many sales items (max 200)' }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
