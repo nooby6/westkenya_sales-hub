@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -101,17 +102,65 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Authentication check - require valid user session
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - Missing authorization header' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Verify the user is authenticated
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized - Invalid session' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    console.log(`Notification request from user: ${user.id}`);
+
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
     const { type, to, subject, data }: NotificationRequest = await req.json();
 
-    if (!to || !type) {
-      throw new Error("Missing required fields: 'to' and 'type'");
+    // Input validation
+    if (!to || typeof to !== 'string') {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing or invalid 'to' field" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    const template = getEmailTemplate(type, data);
+    if (!type || !['low_stock', 'order_confirmation', 'shipment_update', 'return_processed'].includes(type)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid notification type" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const template = getEmailTemplate(type, data || {});
     
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -133,7 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(emailResponse.message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log(`Email sent successfully by user ${user.id}:`, emailResponse);
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
