@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import kabrasLogo from '@/assets/kabras-logo.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -42,9 +43,11 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col bg-card border-r border-border">
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 px-6 border-b border-border">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-          <span className="text-primary-foreground font-bold text-sm">KS</span>
-        </div>
+        <img 
+          src={kabrasLogo} 
+          alt="Kabras Sugar Logo" 
+          className="h-10 w-auto object-contain"
+        />
         <div>
           <h1 className="text-lg font-semibold text-foreground">Kabras Sugar</h1>
           <p className="text-xs text-muted-foreground">Sales Management</p>
