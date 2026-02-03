@@ -1,25 +1,365 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserCircle, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { UserCircle, Shield, Plus, Pencil, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
 
-export default function Users() {
+type AppRole = Database['public']['Enums']['app_role'];
+
+interface UserWithRole {
+  id: string;
+  user_id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: AppRole;
+  created_at: string;
+}
+
+const roleColors: Record<AppRole, string> = {
+  admin: 'bg-destructive text-destructive-foreground',
+  manager: 'bg-chart-1 text-primary-foreground',
+  warehouse_staff: 'bg-chart-2 text-primary-foreground',
+  sales_rep: 'bg-chart-3 text-primary-foreground',
+};
+
+const roleLabels: Record<AppRole, string> = {
+  admin: 'Admin',
+  manager: 'Manager',
+  warehouse_staff: 'Warehouse Staff',
+  sales_rep: 'Sales Rep',
+};
+
+export default function UsersPage() {
+  const { role: currentUserRole } = useAuth();
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    phone: '',
+    role: 'sales_rep' as AppRole,
+  });
+
+  const canManageUsers = currentUserRole === 'admin' || currentUserRole === 'manager';
+
+  // Fetch users with their roles
+  const { data: users, isLoading } = useQuery({
+    queryKey: ['users-with-roles'],
+    queryFn: async () => {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with roles
+      return profiles.map((profile) => {
+        const userRole = roles.find((r) => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: userRole?.role || 'sales_rep',
+        } as UserWithRole;
+      });
+    },
+    enabled: canManageUsers,
+  });
+
+  // Count users by role
+  const roleCounts = users?.reduce(
+    (acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    },
+    {} as Record<AppRole, number>
+  ) || {};
+
+  // Create new user
+  const createUserMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      // Sign up the new user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: { full_name: data.fullName },
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Failed to create user');
+
+      // Wait a moment for the trigger to create profile and default role
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Update the role if not sales_rep (default)
+      if (data.role !== 'sales_rep') {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role: data.role })
+          .eq('user_id', authData.user.id);
+
+        if (roleError) throw roleError;
+      }
+
+      // Update profile with phone if provided
+      if (data.phone) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ phone: data.phone, full_name: data.fullName })
+          .eq('user_id', authData.user.id);
+
+        if (profileError) throw profileError;
+      }
+
+      return authData.user;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      setIsCreateOpen(false);
+      setFormData({ fullName: '', email: '', password: '', phone: '', role: 'sales_rep' });
+      toast.success('User created successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create user');
+    },
+  });
+
+  // Update user role
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      toast.success('Role updated successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update role');
+    },
+  });
+
+  // Update user profile
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      fullName,
+      phone,
+      role,
+    }: {
+      userId: string;
+      fullName: string;
+      phone: string;
+      role: AppRole;
+    }) => {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName, phone })
+        .eq('user_id', userId);
+
+      if (profileError) throw profileError;
+
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role })
+        .eq('user_id', userId);
+
+      if (roleError) throw roleError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      setIsEditOpen(false);
+      setSelectedUser(null);
+      toast.success('User updated successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update user');
+    },
+  });
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    createUserMutation.mutate(formData);
+  };
+
+  const handleEditUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    updateProfileMutation.mutate({
+      userId: selectedUser.user_id,
+      fullName: selectedUser.full_name,
+      phone: selectedUser.phone || '',
+      role: selectedUser.role,
+    });
+  };
+
+  const openEditDialog = (user: UserWithRole) => {
+    setSelectedUser({ ...user });
+    setIsEditOpen(true);
+  };
+
+  if (!canManageUsers) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-lg font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground">
+              Only Admins and Managers can access user management.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-        <p className="text-muted-foreground">Manage user accounts and roles</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">User Management</h1>
+          <p className="text-muted-foreground">Manage user accounts and roles</p>
+        </div>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value: AppRole) => setFormData({ ...formData, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sales_rep">Sales Rep</SelectItem>
+                    <SelectItem value="warehouse_staff">Warehouse Staff</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={createUserMutation.isPending}>
+                {createUserMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create User'
+                )}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {['Admin', 'Manager', 'Warehouse Staff', 'Sales Rep'].map((role) => (
+      {/* Role Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {(['admin', 'manager', 'warehouse_staff', 'sales_rep'] as AppRole[]).map((role) => (
           <Card key={role}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="rounded-lg bg-primary/10 p-3">
-                  <Shield className="h-6 w-6 text-primary" />
+                  <UserCircle className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{role}</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-sm text-muted-foreground">{roleLabels[role]}</p>
+                  <p className="text-2xl font-bold">{roleCounts[role] || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -27,43 +367,165 @@ export default function Users() {
         ))}
       </div>
 
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>User Roles & Permissions</CardTitle>
+          <CardTitle>All Users</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users?.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="font-medium">{user.full_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone || '-'}</TableCell>
+                    <TableCell>
+                      <Badge className={roleColors[user.role]}>{roleLabels[user.role]}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {users?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-fullName">Full Name</Label>
+                <Input
+                  id="edit-fullName"
+                  value={selectedUser.full_name}
+                  onChange={(e) =>
+                    setSelectedUser({ ...selectedUser, full_name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input id="edit-email" type="email" value={selectedUser.email} disabled />
+                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={selectedUser.phone || ''}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">Role</Label>
+                <Select
+                  value={selectedUser.role}
+                  onValueChange={(value: AppRole) =>
+                    setSelectedUser({ ...selectedUser, role: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sales_rep">Sales Rep</SelectItem>
+                    <SelectItem value="warehouse_staff">Warehouse Staff</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" disabled={updateProfileMutation.isPending}>
+                {updateProfileMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Permissions Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Permissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Admin</h3>
+                <Badge className={roleColors.admin}>Admin</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Full access to all data, dashboards, reports, and settings. Can manage users and their roles.
+                Full access to all data, dashboards, reports, and settings. Can manage users and
+                their roles.
               </p>
             </div>
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="h-5 w-5 text-chart-1" />
-                <h3 className="font-semibold">Manager</h3>
+                <Badge className={roleColors.manager}>Manager</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can view all data, manage orders and inventory, generate reports. Cannot manage users.
+                Can view all data, manage orders and inventory, generate reports. Can manage users.
               </p>
             </div>
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="h-5 w-5 text-chart-2" />
-                <h3 className="font-semibold">Warehouse Staff</h3>
+                <Badge className={roleColors.warehouse_staff}>Warehouse Staff</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can update inventory, manage dispatch, and track shipments. Limited access to reports.
+                Can update inventory, manage dispatch, and track shipments. Limited access to
+                reports.
               </p>
             </div>
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Shield className="h-5 w-5 text-chart-3" />
-                <h3 className="font-semibold">Sales Rep</h3>
+                <Badge className={roleColors.sales_rep}>Sales Rep</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 Can enter and update orders, view assigned customers. Read-only access to inventory.
