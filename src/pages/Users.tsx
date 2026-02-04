@@ -46,21 +46,23 @@ interface UserWithRole {
 }
 
 const roleColors: Record<AppRole, string> = {
-  admin: 'bg-destructive text-destructive-foreground',
+  ceo: 'bg-destructive text-destructive-foreground',
   manager: 'bg-chart-1 text-primary-foreground',
-  warehouse_staff: 'bg-chart-2 text-primary-foreground',
+  supervisor: 'bg-chart-2 text-primary-foreground',
   sales_rep: 'bg-chart-3 text-primary-foreground',
+  driver: 'bg-chart-4 text-primary-foreground',
 };
 
 const roleLabels: Record<AppRole, string> = {
-  admin: 'Admin',
+  ceo: 'CEO',
   manager: 'Manager',
-  warehouse_staff: 'Warehouse Staff',
+  supervisor: 'Supervisor',
   sales_rep: 'Sales Rep',
+  driver: 'Driver',
 };
 
 export default function UsersPage() {
-  const { role: currentUserRole } = useAuth();
+  const { canManageUsers, isCeo, role: currentUserRole } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -72,8 +74,6 @@ export default function UsersPage() {
     phone: '',
     role: 'sales_rep' as AppRole,
   });
-
-  const canManageUsers = currentUserRole === 'admin' || currentUserRole === 'manager';
 
   // Fetch users with their roles
   const { data: users, isLoading } = useQuery({
@@ -243,6 +243,15 @@ export default function UsersPage() {
     setIsEditOpen(true);
   };
 
+  // Get available roles for current user to assign
+  const getAssignableRoles = (): AppRole[] => {
+    if (isCeo) {
+      return ['ceo', 'manager', 'supervisor', 'sales_rep', 'driver'];
+    }
+    // Managers can assign all roles except CEO
+    return ['manager', 'supervisor', 'sales_rep', 'driver'];
+  };
+
   if (!canManageUsers) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -251,13 +260,15 @@ export default function UsersPage() {
             <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-lg font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground">
-              Only Admins and Managers can access user management.
+              Only CEO and Managers can access user management.
             </p>
           </CardContent>
         </Card>
       </div>
     );
   }
+
+  const assignableRoles = getAssignableRoles();
 
   return (
     <div className="space-y-6">
@@ -326,10 +337,11 @@ export default function UsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sales_rep">Sales Rep</SelectItem>
-                    <SelectItem value="warehouse_staff">Warehouse Staff</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    {assignableRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {roleLabels[role]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -349,8 +361,8 @@ export default function UsersPage() {
       </div>
 
       {/* Role Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {(['admin', 'manager', 'warehouse_staff', 'sales_rep'] as AppRole[]).map((role) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        {(['ceo', 'manager', 'supervisor', 'sales_rep', 'driver'] as AppRole[]).map((role) => (
           <Card key={role}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -468,10 +480,11 @@ export default function UsersPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sales_rep">Sales Rep</SelectItem>
-                    <SelectItem value="warehouse_staff">Warehouse Staff</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    {assignableRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {roleLabels[role]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -496,14 +509,13 @@ export default function UsersPage() {
           <CardTitle>Role Permissions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Badge className={roleColors.admin}>Admin</Badge>
+                <Badge className={roleColors.ceo}>CEO</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Full access to all data, dashboards, reports, and settings. Can manage users and
-                their roles.
+                Total authority. Full access to all data, users, pricing, and strategic controls. All actions are logged.
               </p>
             </div>
             <div className="p-4 border rounded-lg">
@@ -511,16 +523,15 @@ export default function UsersPage() {
                 <Badge className={roleColors.manager}>Manager</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can view all data, manage orders and inventory, generate reports. Can manage users.
+                End-to-end operational control. Full reporting, inventory rules, user management (except CEO).
               </p>
             </div>
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-3 mb-2">
-                <Badge className={roleColors.warehouse_staff}>Warehouse Staff</Badge>
+                <Badge className={roleColors.supervisor}>Supervisor</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can update inventory, manage dispatch, and track shipments. Limited access to
-                reports.
+                Operational oversight. Can edit/approve orders, adjust schedules, generate reports, manage drivers and sales reps.
               </p>
             </div>
             <div className="p-4 border rounded-lg">
@@ -528,7 +539,15 @@ export default function UsersPage() {
                 <Badge className={roleColors.sales_rep}>Sales Rep</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Can enter and update orders, view assigned customers. Read-only access to inventory.
+                Create orders and schedule deliveries. Read-only inventory and pricing. Can export own orders.
+              </p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-3 mb-2">
+                <Badge className={roleColors.driver}>Driver</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Delivery only. View assigned deliveries, update status, upload proof of delivery. No access to pricing or reports.
               </p>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RealtimeNotifications } from "@/components/notifications/RealtimeNotifications";
 
 import { MainLayout } from "@/components/layout/MainLayout";
+import { DriverLayout } from "@/components/layout/DriverLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
@@ -20,6 +21,11 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import SalesReturns from "./pages/SalesReturns";
 import NotFound from "./pages/NotFound";
+
+// Driver pages
+import DriverDeliveries from "./pages/driver/Deliveries";
+import DriverCompleted from "./pages/driver/Completed";
+import DriverProfile from "./pages/driver/Profile";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +47,64 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Route guard for drivers - redirects drivers to their dedicated app
+function RoleBasedRedirect({ children }: { children: React.ReactNode }) {
+  const { role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Drivers go to their dedicated app
+  if (role === 'driver') {
+    return <Navigate to="/driver/deliveries" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Route guard for non-drivers
+function NonDriverRoute({ children }: { children: React.ReactNode }) {
+  const { role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (role === 'driver') {
+    return <Navigate to="/driver/deliveries" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Route guard for drivers only
+function DriverRoute({ children }: { children: React.ReactNode }) {
+  const { role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (role !== 'driver') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -51,11 +115,24 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <RoleBasedRedirect>
+                    <Navigate to="/dashboard" replace />
+                  </RoleBasedRedirect>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Main app routes (non-drivers) */}
             <Route
               element={
                 <ProtectedRoute>
-                  <MainLayout />
+                  <NonDriverRoute>
+                    <MainLayout />
+                  </NonDriverRoute>
                 </ProtectedRoute>
               }
             >
@@ -71,6 +148,22 @@ const App = () => (
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
+
+            {/* Driver app routes */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DriverRoute>
+                    <DriverLayout />
+                  </DriverRoute>
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/driver/deliveries" element={<DriverDeliveries />} />
+              <Route path="/driver/completed" element={<DriverCompleted />} />
+              <Route path="/driver/profile" element={<DriverProfile />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

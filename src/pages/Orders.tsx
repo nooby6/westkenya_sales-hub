@@ -45,7 +45,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Orders() {
-  const { user, isAdmin, isManager } = useAuth();
+  const { user, isManagerOrHigher, isSupervisorOrHigher } = useAuth();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -374,7 +374,7 @@ export default function Orders() {
                     <TableCell>{format(new Date(order.order_date), 'MMM dd, yyyy')}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {(isAdmin || isManager) && order.status !== 'cancelled' && order.status !== 'delivered' && (
+                        {isSupervisorOrHigher && order.status !== 'cancelled' && order.status !== 'delivered' && (
                           <Select
                             value={order.status}
                             onValueChange={(status) => updateStatusMutation.mutate({ id: order.id, status: status as "pending" | "confirmed" | "processing" | "dispatched" | "delivered" | "cancelled" })}

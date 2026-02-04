@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'manager' | 'warehouse_staff' | 'sales_rep';
+type AppRole = 'ceo' | 'manager' | 'supervisor' | 'sales_rep' | 'driver';
 
 interface AuthContextType {
   user: User | null;
@@ -12,11 +12,21 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
+  // Role checks
+  isCeo: boolean;
   isManager: boolean;
-  isWarehouseStaff: boolean;
+  isSupervisor: boolean;
+  isSalesRep: boolean;
+  isDriver: boolean;
+  // Permission checks
+  isManagerOrHigher: boolean;
+  isSupervisorOrHigher: boolean;
+  isSalesRepOrHigher: boolean;
+  canManageUsers: boolean;
   canManageInventory: boolean;
   canManageOrders: boolean;
+  canViewReports: boolean;
+  canViewFinancials: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,11 +101,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole(null);
   };
 
-  const isAdmin = role === 'admin';
+  // Role checks
+  const isCeo = role === 'ceo';
   const isManager = role === 'manager';
-  const isWarehouseStaff = role === 'warehouse_staff';
-  const canManageInventory = ['admin', 'manager', 'warehouse_staff'].includes(role || '');
-  const canManageOrders = role !== null;
+  const isSupervisor = role === 'supervisor';
+  const isSalesRep = role === 'sales_rep';
+  const isDriver = role === 'driver';
+
+  // Permission hierarchy
+  const isManagerOrHigher = role === 'ceo' || role === 'manager';
+  const isSupervisorOrHigher = role === 'ceo' || role === 'manager' || role === 'supervisor';
+  const isSalesRepOrHigher = role === 'ceo' || role === 'manager' || role === 'supervisor' || role === 'sales_rep';
+
+  // Feature permissions
+  const canManageUsers = isManagerOrHigher;
+  const canManageInventory = isSupervisorOrHigher;
+  const canManageOrders = isSalesRepOrHigher;
+  const canViewReports = isSupervisorOrHigher;
+  const canViewFinancials = isManagerOrHigher;
 
   return (
     <AuthContext.Provider value={{
@@ -106,11 +129,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn,
       signUp,
       signOut,
-      isAdmin,
+      isCeo,
       isManager,
-      isWarehouseStaff,
+      isSupervisor,
+      isSalesRep,
+      isDriver,
+      isManagerOrHigher,
+      isSupervisorOrHigher,
+      isSalesRepOrHigher,
+      canManageUsers,
       canManageInventory,
-      canManageOrders
+      canManageOrders,
+      canViewReports,
+      canViewFinancials,
     }}>
       {children}
     </AuthContext.Provider>
