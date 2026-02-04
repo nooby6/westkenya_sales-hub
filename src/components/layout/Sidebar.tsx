@@ -17,7 +17,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import kabrasLogo from '@/assets/kabras-logo.png';
 
-const navigation = [
+// Navigation items for different role groups
+const mainNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Sales Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Inventory', href: '/inventory', icon: Package },
@@ -34,10 +35,61 @@ const adminNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
+const roleLabels: Record<string, string> = {
+  ceo: 'CEO',
+  manager: 'Manager',
+  supervisor: 'Supervisor',
+  sales_rep: 'Sales Rep',
+  driver: 'Driver',
+};
+
 export function Sidebar() {
   const location = useLocation();
-  const { signOut, role, user } = useAuth();
-  const isAdminOrManager = role === 'admin' || role === 'manager';
+  const { signOut, role, user, isManagerOrHigher, isSupervisorOrHigher, canViewReports } = useAuth();
+
+  // Filter navigation based on role permissions
+  const getVisibleNavigation = () => {
+    const items = [];
+
+    // Dashboard - visible to supervisor and higher
+    if (isSupervisorOrHigher) {
+      items.push(mainNavigation[0]); // Dashboard
+    }
+
+    // Sales Orders - visible to sales rep and higher
+    if (role !== 'driver') {
+      items.push(mainNavigation[1]); // Sales Orders
+    }
+
+    // Inventory - visible to supervisor and higher
+    if (isSupervisorOrHigher) {
+      items.push(mainNavigation[2]); // Inventory
+    }
+
+    // Shipments - visible to supervisor and higher (drivers use dedicated app)
+    if (isSupervisorOrHigher) {
+      items.push(mainNavigation[3]); // Shipments
+    }
+
+    // Sales Returns - visible to supervisor and higher
+    if (isSupervisorOrHigher) {
+      items.push(mainNavigation[4]); // Sales Returns
+    }
+
+    // Customers - visible to sales rep and higher
+    if (role !== 'driver') {
+      items.push(mainNavigation[5]); // Customers
+    }
+
+    // Reports - visible to supervisor and higher
+    if (canViewReports) {
+      items.push(mainNavigation[6]); // Reports
+    }
+
+    return items;
+  };
+
+  const visibleNavigation = getVisibleNavigation();
 
   return (
     <div className="flex h-full w-64 flex-col bg-card border-r border-border">
@@ -61,7 +113,7 @@ export function Sidebar() {
             Main Menu
           </p>
         </div>
-        {navigation.map((item, index) => {
+        {visibleNavigation.map((item, index) => {
           const isActive = location.pathname === item.href;
           return (
             <NavLink
@@ -82,7 +134,7 @@ export function Sidebar() {
           );
         })}
 
-        {isAdminOrManager && (
+        {isManagerOrHigher && (
           <>
             <div className="mt-6 mb-2">
               <p className="px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -102,7 +154,7 @@ export function Sidebar() {
                       ? 'bg-primary text-primary-foreground shadow-md'
                       : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
-                  style={{ animationDelay: `${(navigation.length + index) * 50}ms` }}
+                  style={{ animationDelay: `${(visibleNavigation.length + index) * 50}ms` }}
                 >
                   <item.icon className={cn("h-5 w-5 transition-transform duration-200", isActive && "scale-110")} />
                   {item.name}
@@ -124,7 +176,7 @@ export function Sidebar() {
               {user?.email?.split('@')[0] || 'User'}
             </p>
             <p className="text-xs text-muted-foreground capitalize">
-              {role?.replace('_', ' ') || 'Loading...'}
+              {role ? roleLabels[role] : 'Loading...'}
             </p>
           </div>
         </div>
