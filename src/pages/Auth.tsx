@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { z } from 'zod';
-
+import kabrasLogo from '@/assets/kabras-logo.png';
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -123,9 +123,11 @@ export default function Auth() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-xl">KS</span>
-          </div>
+          <img 
+            src={kabrasLogo} 
+            alt="Kabras Sugar Logo" 
+            className="h-20 w-auto object-contain mx-auto mb-4"
+          />
           <h1 className="text-2xl font-bold text-foreground">Kabras Sugar</h1>
           <p className="text-muted-foreground">Sales Management System</p>
         </div>

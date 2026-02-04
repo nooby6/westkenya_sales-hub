@@ -518,10 +518,15 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_ceo: { Args: { _user_id: string }; Returns: boolean }
+      is_driver: { Args: { _user_id: string }; Returns: boolean }
+      is_manager_or_higher: { Args: { _user_id: string }; Returns: boolean }
+      is_sales_rep_or_higher: { Args: { _user_id: string }; Returns: boolean }
+      is_supervisor_or_higher: { Args: { _user_id: string }; Returns: boolean }
       is_warehouse_or_higher: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "manager" | "warehouse_staff" | "sales_rep"
+      app_role: "ceo" | "manager" | "supervisor" | "sales_rep" | "driver"
       order_status:
         | "pending"
         | "confirmed"
@@ -663,7 +668,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "warehouse_staff", "sales_rep"],
+      app_role: ["ceo", "manager", "supervisor", "sales_rep", "driver"],
       order_status: [
         "pending",
         "confirmed",
