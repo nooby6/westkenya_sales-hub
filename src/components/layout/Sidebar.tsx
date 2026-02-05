@@ -10,7 +10,8 @@ import {
   LogOut,
   Building2,
   UserCircle,
-  RotateCcw
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,6 +27,7 @@ const mainNavigation = [
   { name: 'Sales Returns', href: '/sales-returns', icon: RotateCcw },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
+  { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
 ];
 
 const adminNavigation = [
@@ -84,6 +86,11 @@ export function Sidebar() {
     // Reports - visible to supervisor and higher
     if (canViewReports) {
       items.push(mainNavigation[6]); // Reports
+    }
+
+    // Incidents - visible to supervisor and higher
+    if (isSupervisorOrHigher) {
+      items.push(mainNavigation[7]); // Incidents
     }
 
     return items;
