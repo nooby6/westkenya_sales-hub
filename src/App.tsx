@@ -20,6 +20,7 @@ import Depots from "./pages/Depots";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import SalesReturns from "./pages/SalesReturns";
+import Incidents from "./pages/Incidents";
 import NotFound from "./pages/NotFound";
 
 // Driver pages
@@ -143,6 +144,7 @@ const App = () => (
               <Route path="/sales-returns" element={<SalesReturns />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/incidents" element={<Incidents />} />
               <Route path="/products" element={<Products />} />
               <Route path="/depots" element={<Depots />} />
               <Route path="/users" element={<Users />} />
