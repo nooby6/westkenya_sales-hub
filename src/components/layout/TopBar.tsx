@@ -1,8 +1,8 @@
-import { Bell, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { MobileSidebar } from './MobileSidebar';
+import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
 
 export function TopBar() {
   return (
@@ -24,12 +24,7 @@ export function TopBar() {
       
       <div className="flex items-center gap-1 md:gap-2">
         <ThemeToggle />
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground flex items-center justify-center">
-            3
-          </span>
-        </Button>
+        <NotificationDropdown />
       </div>
     </header>
   );

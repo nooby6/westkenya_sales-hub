@@ -64,12 +64,12 @@ export default function DriverDeliveries() {
         .from('shipments')
         .select(`
           *,
-          sales_orders!inner (
+          sales_orders (
             order_number,
             customers (name, address, phone)
           )
         `)
-        .eq('driver_phone', profile!.phone)
+        .eq('driver_phone', profile!.phone!)
         .neq('status', 'delivered')
         .order('created_at', { ascending: false });
 

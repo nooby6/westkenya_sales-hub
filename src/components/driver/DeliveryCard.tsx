@@ -57,10 +57,9 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
 
   const openWaze = () => {
     if (!customerAddress) return;
-    // Waze deep link with address
     const encodedAddress = encodeURIComponent(customerAddress);
-    const wazeUrl = `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
-    window.open(wazeUrl, '_blank');
+    // Try Waze app first, then fallback to web
+    window.open(`https://waze.com/ul?q=${encodedAddress}&navigate=yes`, '_blank');
   };
 
   return (
@@ -102,15 +101,15 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
           )}
         </div>
 
-        {/* Waze Navigation Button */}
-        {customerAddress && shipment.status === 'in_transit' && (
+        {/* Waze Navigation Button - show for loading and in_transit */}
+        {customerAddress && (shipment.status === 'in_transit' || shipment.status === 'loading') && (
           <Button
             variant="outline"
             className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
             onClick={openWaze}
           >
             <Navigation className="h-4 w-4" />
-            Open in Waze
+            Navigate with Waze
           </Button>
         )}
 

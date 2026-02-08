@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ShoppingCart, Package, Truck, DollarSign, TrendingUp, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { SalesChart } from '@/components/dashboard/SalesChart';
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable';
@@ -117,97 +118,111 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total Revenue"
-          value=""
-          numericValue={stats?.totalRevenue || 0}
-          prefix="KES "
-          icon={DollarSign}
-          trend={{ value: 12.5, isPositive: true }}
-          delay={0}
-        />
-        <StatsCard
-          title="Pending Orders"
-          value=""
-          numericValue={stats?.pendingOrders || 0}
-          description={`of ${stats?.totalOrders || 0} total orders`}
-          icon={ShoppingCart}
-          delay={100}
-        />
-        <StatsCard
-          title="Total Stock"
-          value=""
-          numericValue={stats?.totalStockMT || 0}
-          suffix=" MT"
-          decimals={1}
-          description="across all depots"
-          icon={Package}
-          delay={200}
-        />
-        <StatsCard
-          title="Active Shipments"
-          value=""
-          numericValue={stats?.activeShipments || 0}
-          description="in transit"
-          icon={Truck}
-          trend={{ value: 8.2, isPositive: true }}
-          delay={300}
-        />
+        <Link to="/reports" className="block">
+          <StatsCard
+            title="Total Revenue"
+            value=""
+            numericValue={stats?.totalRevenue || 0}
+            prefix="KES "
+            icon={DollarSign}
+            trend={{ value: 12.5, isPositive: true }}
+            delay={0}
+          />
+        </Link>
+        <Link to="/orders" className="block">
+          <StatsCard
+            title="Pending Orders"
+            value=""
+            numericValue={stats?.pendingOrders || 0}
+            description={`of ${stats?.totalOrders || 0} total orders`}
+            icon={ShoppingCart}
+            delay={100}
+          />
+        </Link>
+        <Link to="/inventory" className="block">
+          <StatsCard
+            title="Total Stock"
+            value=""
+            numericValue={stats?.totalStockMT || 0}
+            suffix=" MT"
+            decimals={1}
+            description="across all depots"
+            icon={Package}
+            delay={200}
+          />
+        </Link>
+        <Link to="/shipments" className="block">
+          <StatsCard
+            title="Active Shipments"
+            value=""
+            numericValue={stats?.activeShipments || 0}
+            description="in transit"
+            icon={Truck}
+            trend={{ value: 8.2, isPositive: true }}
+            delay={300}
+          />
+        </Link>
       </div>
 
       {/* Additional Stats Row */}
       <div className="grid gap-4 md:grid-cols-3">
-        <AnimatedCard delay={400}>
-          <AnimatedCardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Returns This Period</p>
-                <p className="text-2xl font-bold text-foreground">
-                  <AnimatedCounter value={stats?.totalReturnsMT || 0} decimals={2} suffix=" MT" />
-                </p>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center animate-pulse-glow">
-                <RotateCcw className="h-6 w-6 text-destructive" />
-              </div>
-            </div>
-          </AnimatedCardContent>
-        </AnimatedCard>
-
-        <AnimatedCard delay={500}>
-          <AnimatedCardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Delivery Success Rate</p>
-                <div className="mt-2">
-                  <ProgressRing value={deliveryRate} size={70} color="chart-2" />
+        <Link to="/sales-returns" className="block">
+          <AnimatedCard delay={400}>
+            <AnimatedCardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Returns This Period</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    <AnimatedCounter value={stats?.totalReturnsMT || 0} decimals={2} suffix=" MT" />
+                  </p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center animate-pulse-glow">
+                  <RotateCcw className="h-6 w-6 text-destructive" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-chart-2/20 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-chart-2" />
-              </div>
-            </div>
-          </AnimatedCardContent>
-        </AnimatedCard>
+            </AnimatedCardContent>
+          </AnimatedCard>
+        </Link>
 
-        <AnimatedCard delay={600}>
-          <AnimatedCardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Order Completion</p>
-                <div className="mt-2">
-                  <ProgressRing 
-                    value={stats?.totalOrders ? ((stats.totalOrders - stats.pendingOrders) / stats.totalOrders) * 100 : 0} 
-                    size={70} 
-                    color="primary" 
-                  />
+        <Link to="/shipments" className="block">
+          <AnimatedCard delay={500}>
+            <AnimatedCardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Delivery Success Rate</p>
+                  <div className="mt-2">
+                    <ProgressRing value={deliveryRate} size={70} color="chart-2" />
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-chart-2/20 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-chart-2" />
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <ShoppingCart className="h-6 w-6 text-primary" />
+            </AnimatedCardContent>
+          </AnimatedCard>
+        </Link>
+
+        <Link to="/orders" className="block">
+          <AnimatedCard delay={600}>
+            <AnimatedCardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Completion</p>
+                  <div className="mt-2">
+                    <ProgressRing 
+                      value={stats?.totalOrders ? ((stats.totalOrders - stats.pendingOrders) / stats.totalOrders) * 100 : 0} 
+                      size={70} 
+                      color="primary" 
+                    />
+                  </div>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <ShoppingCart className="h-6 w-6 text-primary" />
+                </div>
               </div>
-            </div>
-          </AnimatedCardContent>
-        </AnimatedCard>
+            </AnimatedCardContent>
+          </AnimatedCard>
+        </Link>
       </div>
 
       {/* Charts Row */}
