@@ -62,11 +62,11 @@ export function RevenueByProductChart() {
   });
 
   const chartData = revenueData?.length ? revenueData : [
-    { name: 'Bale 2×10', revenue: 4500000, revenueMillion: 4.5 },
-    { name: 'Bag 50kg', revenue: 3200000, revenueMillion: 3.2 },
-    { name: 'Bale 1×20', revenue: 2800000, revenueMillion: 2.8 },
-    { name: 'Bag 25kg', revenue: 1900000, revenueMillion: 1.9 },
-    { name: 'Bale 1×12', revenue: 1500000, revenueMillion: 1.5 },
+    { name: 'Bale 2 Kg×10', revenue: 4500000, revenueMillion: 4.5 },
+    { name: 'Bag 50 Kg', revenue: 3200000, revenueMillion: 3.2 },
+    { name: 'Bale 1 Kg×20', revenue: 2800000, revenueMillion: 2.8 },
+    { name: 'Bag 25Kg', revenue: 1900000, revenueMillion: 1.9 },
+    { name: 'Bale 1 Kg×12', revenue: 1500000, revenueMillion: 1.5 },
   ];
 
   return (
