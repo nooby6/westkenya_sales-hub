@@ -46,11 +46,11 @@ interface UserWithRole {
 }
 
 const roleColors: Record<AppRole, string> = {
-  ceo: 'bg-destructive text-destructive-foreground',
-  manager: 'bg-chart-1 text-primary-foreground',
-  supervisor: 'bg-chart-2 text-primary-foreground',
-  sales_rep: 'bg-chart-3 text-primary-foreground',
-  driver: 'bg-chart-4 text-primary-foreground',
+  ceo: 'bg-destructive/90 text-destructive-foreground border-destructive/50 hover:bg-destructive/90',
+  manager: 'bg-primary/90 text-primary-foreground border-primary/50 hover:bg-primary/90',
+  supervisor: 'bg-accent text-accent-foreground border-accent/50 hover:bg-accent',
+  sales_rep: 'bg-secondary text-secondary-foreground border-secondary/50 hover:bg-secondary',
+  driver: 'bg-muted text-muted-foreground border-muted/50 hover:bg-muted',
 };
 
 const roleLabels: Record<AppRole, string> = {
