@@ -56,6 +56,50 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_incidents: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          incident_type: string
+          reported_at: string
+          reported_by: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          shipment_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          incident_type: string
+          reported_at?: string
+          reported_by: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          shipment_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          incident_type?: string
+          reported_at?: string
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          shipment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_incidents_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depots: {
         Row: {
           contact_phone: string | null

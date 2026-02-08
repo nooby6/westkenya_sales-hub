@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { RealtimeNotifications } from "@/components/notifications/RealtimeNotifications";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DriverLayout } from "@/components/layout/DriverLayout";
@@ -20,6 +20,7 @@ import Depots from "./pages/Depots";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import SalesReturns from "./pages/SalesReturns";
+import Incidents from "./pages/Incidents";
 import NotFound from "./pages/NotFound";
 
 // Driver pages
@@ -108,11 +109,11 @@ function DriverRoute({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <RealtimeNotifications />
-        <BrowserRouter>
+      <NotificationProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route 
@@ -143,6 +144,7 @@ const App = () => (
               <Route path="/sales-returns" element={<SalesReturns />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/incidents" element={<Incidents />} />
               <Route path="/products" element={<Products />} />
               <Route path="/depots" element={<Depots />} />
               <Route path="/users" element={<Users />} />
@@ -166,8 +168,9 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </NotificationProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
