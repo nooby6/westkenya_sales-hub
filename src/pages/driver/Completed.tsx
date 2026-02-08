@@ -33,12 +33,12 @@ export default function DriverCompleted() {
         .from('shipments')
         .select(`
           *,
-          sales_orders!inner (
+          sales_orders (
             order_number,
             customers (name, address)
           )
         `)
-        .eq('driver_phone', profile!.phone)
+        .eq('driver_phone', profile!.phone!)
         .eq('status', 'delivered')
         .order('delivered_at', { ascending: false })
         .limit(50);
