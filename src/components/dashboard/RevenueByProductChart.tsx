@@ -27,11 +27,11 @@ const COLORS = [
 ];
 
 const sugarTypeLabels: Record<string, string> = {
-  bale_2x10: 'Bale 2Kg×10',
-  bale_1x20: 'Bale 1Kg×20',
-  bale_1x12: 'Bale 1Kg×12',
-  bag_50kg: 'Bag 50Kg',
-  bag_25kg: 'Bag 25Kg',
+  bale_2x10: 'Bale 2Kg × 10',
+  bale_1x20: 'Bale 1Kg × 20',
+  bale_1x12: 'Bale 1 Kg × 12',
+  bag_50kg: 'Bag 50 Kg',
+  bag_25kg: 'Bag 25 Kg',
 };
 
 export function RevenueByProductChart() {
