@@ -6,7 +6,7 @@ Developed and maintained by **Whrite Inc. LTD**.
 
 ---
 
-## 📌 Overview
+##  Overview
 
 The Kabras Sugar Sales Management System replaces fragmented and manual sales workflows with a single, secure, and scalable digital platform.
 
@@ -21,7 +21,7 @@ It is built for operational accuracy, transparency, and long-term scalability.
 
 ---
 
-## 🚀 Core Features
+##  Core Features
 
 ### Sales Management
 - Create, edit, and track sales orders  
@@ -60,7 +60,7 @@ Each role has strictly enforced permissions.
 
 ---
 
-## 👥 User Roles Summary
+##  User Roles Summary
 
 | Role | Access Scope |
 |-----|------------|
@@ -74,7 +74,7 @@ All sensitive actions are logged for audit purposes.
 
 ---
 
-## 🧱 Technology Stack (Indicative)
+##  Techn Stack (Indicative)
 
 - **Backend:** Node.js / Python (FastAPI) / Go  
 - **Frontend:** React / Vue.js  
@@ -85,7 +85,7 @@ All sensitive actions are logged for audit purposes.
 
 ---
 
-## ☁️ Deployment
+##  Deployment
 
 The system supports:
 - Cloud or on-premise deployment  
@@ -95,7 +95,7 @@ The system supports:
 
 ---
 
-## 🔐 Security & Compliance
+##  Security & Compliance
 
 - Strict role-based access enforcement  
 - Immutable audit logs for sensitive actions  
@@ -104,7 +104,7 @@ The system supports:
 
 ---
 
-## ⚖️ Legal & Regulatory Considerations (Kenya)
+##  Legal & Regulatory Considerations (Kenya)
 
 This system is designed to operate within the Kenyan legal environment, including compliance with:
 
@@ -122,7 +122,7 @@ System operators are responsible for ensuring ongoing compliance with:
 
 ---
 
-## 📜 Licensing
+##  Licensing
 
 ### Software License
 
@@ -134,7 +134,7 @@ See the `LICENSE` file for full details.
 
 ### Intellectual Property
 
-All original source code, system architecture, and documentation are:
+All source code, system architecture, and documentation are:
 
 © **Whrite Inc. LTD**, Kenya.  
 All rights reserved unless otherwise stated under the MIT License.
@@ -155,11 +155,11 @@ Kenya
 
 ## 🛠 Support & Maintenance
 
-Ongoing maintenance, feature enhancements, and integrations are provided by **Whrite Inc. LTD** under separate agreement.
+Ongoing maintenance, feature enhancements, and integrations are provided by **Whrite Inc. LTD** under a separate agreement.
 
 ---
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This software is provided **“as is”**, without warranty of any kind, express or implied.
 
