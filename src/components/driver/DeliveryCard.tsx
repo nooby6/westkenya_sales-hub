@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Package, Clock, CheckCircle, Truck, ArrowRight, Navigation, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
+import { DeliveryMap } from './DeliveryMap';
 import type { Database } from '@/integrations/supabase/types';
 
 type ShipmentStatus = Database['public']['Enums']['shipment_status'];
@@ -55,11 +56,11 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
   const customerAddress = shipment.sales_orders?.customers?.address;
   const hasNextStatus = shipment.status !== 'delivered';
 
-  const openWaze = () => {
+  const openDirections = () => {
     if (!customerAddress) return;
     const encodedAddress = encodeURIComponent(customerAddress);
-    // Try Waze app first, then fallback to web
-    window.open(`https://waze.com/ul?q=${encodedAddress}&navigate=yes`, '_blank');
+    // Open Google Maps with directions
+    window.open(`https://www.google.com/maps/search/${encodedAddress}`, '_blank');
   };
 
   return (
@@ -101,16 +102,19 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
           )}
         </div>
 
-        {/* Waze Navigation Button - show for loading and in_transit */}
-        {customerAddress && (shipment.status === 'in_transit' || shipment.status === 'loading') && (
-          <Button
-            variant="outline"
-            className="w-full gap-2 border-primary text-primary hover:bg-primary/10"
-            onClick={openWaze}
-          >
-            <Navigation className="h-4 w-4" />
-            Navigate with Waze
-          </Button>
+        {/* Embedded Map */}
+        {customerAddress && (
+          <div className="space-y-2">
+            <DeliveryMap address={customerAddress} customerName={shipment.sales_orders?.customers?.name} />
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={openDirections}
+            >
+              <Navigation className="h-4 w-4" />
+              Open in Google Maps
+            </Button>
+          </div>
         )}
 
         {/* Vehicle Info */}
