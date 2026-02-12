@@ -9,19 +9,23 @@ interface DeliveryMapProps {
 
 export function DeliveryMap({ address, customerName }: DeliveryMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<L.Map | null>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !address) return;
 
-    // Initialize map
-    if (!map.current) {
-      map.current = L.map(mapContainer.current).setView([0, 0], 13);
+    // Initialize map only once
+    if (!mapInstance.current) {
+      mapInstance.current = L.map(mapContainer.current, {
+        dragging: true,
+        tap: true,
+      }).setView([0, 0], 13);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19,
-      }).addTo(map.current);
+      }).addTo(mapInstance.current);
     }
 
     // Geocode address using OpenStreetMap Nominatim API
@@ -29,34 +33,42 @@ export function DeliveryMap({ address, customerName }: DeliveryMapProps) {
       try {
         const encodedAddress = encodeURIComponent(address);
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
+          `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'Kabras-Driver-App',
+            },
+          }
         );
         const data = await response.json();
 
-        if (data && data.length > 0) {
+        if (data && data.length > 0 && mapInstance.current) {
           const { lat, lon } = data[0];
-          const coords = [parseFloat(lat), parseFloat(lon)] as [number, number];
+          const coords: [number, number] = [parseFloat(lat), parseFloat(lon)];
 
-          if (map.current) {
-            map.current.setView(coords, 15);
+          mapInstance.current.setView(coords, 16);
 
-            // Add marker with popup
-            L.marker(coords, {
-              icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-              }),
-            })
-              .bindPopup(
-                `<div class="font-semibold text-sm">${customerName || 'Delivery Location'}</div><div class="text-xs text-gray-600">${address}</div>`
-              )
-              .openPopup()
-              .addTo(map.current);
+          // Remove old marker if exists
+          if (markerRef.current) {
+            markerRef.current.remove();
           }
+
+          // Add new marker
+          markerRef.current = L.marker(coords, {
+            icon: L.icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41],
+            }),
+          })
+            .bindPopup(
+              `<div style="font-weight: bold; font-size: 12px;">${customerName || 'Delivery Location'}</div><div style="font-size: 11px; color: #666;">${address}</div>`
+            )
+            .openPopup()
+            .addTo(mapInstance.current);
         }
       } catch (error) {
         console.error('Geocoding error:', error);
@@ -70,6 +82,7 @@ export function DeliveryMap({ address, customerName }: DeliveryMapProps) {
     <div
       ref={mapContainer}
       className="w-full h-64 rounded-lg border border-border/50 overflow-hidden"
+      style={{ background: '#f5f5f5' }}
     />
   );
 }
