@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import kabrasLogo from '@/assets/kabras-logo.png';
+import { useNavigate } from 'react-router-dom';
 
 // Navigation items for different role groups
 const mainNavigation = [
@@ -47,6 +48,7 @@ const roleLabels: Record<string, string> = {
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, role, user, isManagerOrHigher, isSupervisorOrHigher, canViewReports } = useAuth();
 
   // Filter navigation based on role permissions
@@ -174,7 +176,10 @@ export function Sidebar() {
 
       {/* User Section */}
       <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3 mb-3">
+        <button
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-3 mb-3 w-full rounded-lg p-1 hover:bg-accent transition-colors text-left"
+        >
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
             <UserCircle className="h-5 w-5 text-primary" />
           </div>
@@ -186,7 +191,7 @@ export function Sidebar() {
               {role ? roleLabels[role] : 'Loading...'}
             </p>
           </div>
-        </div>
+        </button>
         <Button
           variant="outline"
           size="sm"
