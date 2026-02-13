@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSignedUrl } from '@/hooks/use-signed-url';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { UserCircle, Phone, Mail, Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserCircle, Phone, Mail, Loader2, Camera, Lock, AtSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 const roleLabels: Record<string, string> = {
@@ -21,8 +24,22 @@ const roleLabels: Record<string, string> = {
 export default function Profile() {
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Personal info editing
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', phone: '' });
+
+  // Password change
+  const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Email change
+  const [newEmail, setNewEmail] = useState('');
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+
+  // Uploading photo
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['my-profile', user?.id],
@@ -38,6 +55,9 @@ export default function Profile() {
     enabled: !!user?.id,
   });
 
+  const { signedUrl: avatarUrl } = useSignedUrl('profile-photos', profile?.avatar_url);
+
+  // Update profile info
   const updateMutation = useMutation({
     mutationFn: async (data: { full_name: string; phone: string }) => {
       const { error } = await supabase
@@ -55,6 +75,97 @@ export default function Profile() {
       toast.error(error.message || 'Failed to update profile');
     },
   });
+
+  // Photo upload
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: filePath })
+        .eq('user_id', user.id);
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      toast.success('Profile photo updated');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload photo');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Password change
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword,
+      });
+      if (error) throw error;
+      toast.success('Password updated successfully');
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update password');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // Email change
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = newEmail.trim();
+    if (!trimmed) {
+      toast.error('Please enter a valid email');
+      return;
+    }
+
+    setIsChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        email: trimmed,
+      });
+      if (error) throw error;
+      toast.success('Confirmation email sent to your new address. Please check your inbox.');
+      setNewEmail('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update email');
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
 
   const handleEdit = () => {
     if (profile) {
@@ -80,6 +191,13 @@ export default function Profile() {
     );
   }
 
+  const initials = profile?.full_name
+    ?.split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'U';
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
@@ -87,6 +205,7 @@ export default function Profile() {
         <p className="text-muted-foreground">View and update your personal information</p>
       </div>
 
+      {/* Profile Photo & Info Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -129,8 +248,32 @@ export default function Profile() {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserCircle className="h-10 w-10 text-primary" />
+                <div className="relative group">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarUrl || undefined} alt={profile?.full_name} />
+                    <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-foreground" />
+                    ) : (
+                      <Camera className="h-5 w-5 text-foreground" />
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
                 </div>
                 <div>
                   <p className="font-semibold text-lg">{profile?.full_name}</p>
@@ -149,6 +292,80 @@ export default function Profile() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Change Email */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AtSign className="h-5 w-5" />
+            Change Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleEmailChange} className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Current email: <span className="font-medium text-foreground">{user?.email}</span>
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="new-email">New Email Address</Label>
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="Enter new email address"
+                required
+              />
+            </div>
+            <Button type="submit" disabled={isChangingEmail}>
+              {isChangingEmail ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Update Email
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="Enter new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <Button type="submit" disabled={isChangingPassword}>
+              {isChangingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Update Password
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
