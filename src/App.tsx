@@ -21,6 +21,7 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import SalesReturns from "./pages/SalesReturns";
 import Incidents from "./pages/Incidents";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 // Driver pages
@@ -149,6 +150,7 @@ const App = () => (
               <Route path="/depots" element={<Depots />} />
               <Route path="/users" element={<Users />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* Driver app routes */}
