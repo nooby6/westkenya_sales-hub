@@ -27,15 +27,13 @@ export const queryKeys = {
 } as const;
 
 /**
- * Helper to invalidate all profile-related queries for a user
+ * Helper to get query keys that should be invalidated for profile updates
  */
 export const profileInvalidationKeys = {
   // Invalidate specific user's profile
-  userProfile: (userId: string) => [['profile', userId]],
+  userProfile: (userId: string) => queryKeys.profile.byUserId(userId),
   // Invalidate all users list
-  allUsers: () => [['profiles', 'with-roles']],
-  // Invalidate both user profile and users list
-  both: (userId: string) => [['profile', userId], ['profiles', 'with-roles']],
+  allUsers: () => queryKeys.profile.allWithRoles(),
 };
 
 /**
@@ -43,16 +41,16 @@ export const profileInvalidationKeys = {
  */
 export const driverInvalidationKeys = {
   byPhone: (oldPhone: string | null, newPhone: string | null) => {
-    const keys = [];
+    const keys: Array<readonly string[]> = [];
     if (oldPhone) {
-      keys.push(['shipments', 'driver', oldPhone]);
-      keys.push(['shipments', 'completed', oldPhone]);
-      keys.push(['driver-stats', oldPhone]);
+      keys.push(queryKeys.shipments.byDriverPhone(oldPhone));
+      keys.push(queryKeys.shipments.completedByDriver(oldPhone));
+      keys.push(queryKeys.driverStats.byPhone(oldPhone));
     }
     if (newPhone && newPhone !== oldPhone) {
-      keys.push(['shipments', 'driver', newPhone]);
-      keys.push(['shipments', 'completed', newPhone]);
-      keys.push(['driver-stats', newPhone]);
+      keys.push(queryKeys.shipments.byDriverPhone(newPhone));
+      keys.push(queryKeys.shipments.completedByDriver(newPhone));
+      keys.push(queryKeys.driverStats.byPhone(newPhone));
     }
     return keys;
   },
