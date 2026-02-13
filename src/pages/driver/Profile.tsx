@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { UserCircle, Phone, Mail, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { queryKeys, driverInvalidationKeys } from '@/lib/queryKeys';
 
 export default function DriverProfile() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function DriverProfile() {
 
   // Fetch profile
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['driver-profile-full', user?.id],
+    queryKey: queryKeys.profile.byUserId(user?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -36,7 +37,7 @@ export default function DriverProfile() {
 
   // Fetch delivery stats
   const { data: stats } = useQuery({
-    queryKey: ['driver-stats', profile?.phone],
+    queryKey: queryKeys.driverStats.byPhone(profile?.phone || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shipments')
@@ -60,9 +61,20 @@ export default function DriverProfile() {
         .update(data)
         .eq('user_id', user!.id);
       if (error) throw error;
+      return { oldPhone: profile?.phone, newPhone: data.phone };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['driver-profile-full'] });
+    onSuccess: (data) => {
+      // Invalidate profile cache
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.byUserId(user!.id) });
+      
+      // If phone changed, invalidate all driver-related queries
+      if (data.oldPhone !== data.newPhone) {
+        const driverKeys = driverInvalidationKeys.byPhone(data.oldPhone, data.newPhone);
+        driverKeys.forEach(key => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
+      }
+      
       setIsEditing(false);
       toast.success('Profile updated successfully');
     },

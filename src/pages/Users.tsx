@@ -32,6 +32,7 @@ import {
 import { UserCircle, Shield, Plus, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import { queryKeys, profileInvalidationKeys } from '@/lib/queryKeys';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
@@ -77,7 +78,7 @@ export default function UsersPage() {
 
   // Fetch users with their roles
   const { data: users, isLoading } = useQuery({
-    queryKey: ['users-with-roles'],
+    queryKey: queryKeys.profile.allWithRoles(),
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -155,7 +156,7 @@ export default function UsersPage() {
       return authData.user;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.allWithRoles() });
       setIsCreateOpen(false);
       setFormData({ fullName: '', email: '', password: '', phone: '', role: 'sales_rep' });
       toast.success('User created successfully!');
@@ -174,9 +175,12 @@ export default function UsersPage() {
         .eq('user_id', userId);
 
       if (error) throw error;
+      return userId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+    onSuccess: (userId) => {
+      // Invalidate both the users list and the specific user's profile cache
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.allWithRoles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.byUserId(userId) });
       toast.success('Role updated successfully!');
     },
     onError: (error: Error) => {
@@ -210,9 +214,13 @@ export default function UsersPage() {
         .eq('user_id', userId);
 
       if (roleError) throw roleError;
+      
+      return userId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
+    onSuccess: (userId) => {
+      // Invalidate both the users list and the specific user's profile cache
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.allWithRoles() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.byUserId(userId) });
       setIsEditOpen(false);
       setSelectedUser(null);
       toast.success('User updated successfully!');

@@ -18,6 +18,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import kabrasLogo from '@/assets/kabras-logo.png';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Navigation items for different role groups
 const mainNavigation = [
@@ -50,6 +53,22 @@ export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, role, user, isManagerOrHigher, isSupervisorOrHigher, canViewReports } = useAuth();
+
+  // Fetch user profile for display in sidebar
+  const { data: profile } = useQuery({
+    queryKey: queryKeys.profile.byUserId(user?.id || ''),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('user_id', user!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // Filter navigation based on role permissions
   const getVisibleNavigation = () => {
@@ -185,7 +204,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              {user?.email?.split('@')[0] || 'User'}
+              {profile?.full_name || user?.email?.split('@')[0] || 'User'}
             </p>
             <p className="text-xs text-muted-foreground capitalize">
               {role ? roleLabels[role] : 'Loading...'}

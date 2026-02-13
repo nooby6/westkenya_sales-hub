@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 import { DeliveryCard } from '@/components/driver/DeliveryCard';
 import { IncidentReportDialog } from '@/components/driver/IncidentReportDialog';
+import { queryKeys } from '@/lib/queryKeys';
 
 type ShipmentStatus = Database['public']['Enums']['shipment_status'];
 
@@ -43,7 +44,7 @@ export default function DriverDeliveries() {
 
   // Fetch driver's profile to get their phone number
   const { data: profile } = useQuery({
-    queryKey: ['driver-profile', user?.id],
+    queryKey: queryKeys.profile.byUserId(user?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -58,7 +59,7 @@ export default function DriverDeliveries() {
 
   // Fetch shipments assigned to this driver (by phone match)
   const { data: shipments, isLoading } = useQuery({
-    queryKey: ['driver-shipments', profile?.phone],
+    queryKey: queryKeys.shipments.byDriverPhone(profile?.phone || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shipments')
@@ -98,7 +99,12 @@ export default function DriverDeliveries() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['driver-shipments'] });
+      // Invalidate both active and completed shipments
+      if (profile?.phone) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.shipments.byDriverPhone(profile.phone) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.shipments.completedByDriver(profile.phone) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.driverStats.byPhone(profile.phone) });
+      }
       toast.success('Status updated successfully');
     },
     onError: (error: Error) => {

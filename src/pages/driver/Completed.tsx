@@ -6,13 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, CheckCircle, Truck, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 export default function DriverCompleted() {
   const { user } = useAuth();
 
   // Fetch driver's profile
   const { data: profile } = useQuery({
-    queryKey: ['driver-profile', user?.id],
+    queryKey: queryKeys.profile.byUserId(user?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -27,7 +28,7 @@ export default function DriverCompleted() {
 
   // Fetch completed deliveries
   const { data: deliveries, isLoading } = useQuery({
-    queryKey: ['driver-completed', profile?.phone],
+    queryKey: queryKeys.shipments.completedByDriver(profile?.phone || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shipments')

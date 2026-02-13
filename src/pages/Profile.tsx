@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle, Phone, Mail, Loader2, Camera, Lock, AtSign } from 'lucide-react';
 import { toast } from 'sonner';
+import { queryKeys, profileInvalidationKeys, driverInvalidationKeys } from '@/lib/queryKeys';
 
 const roleLabels: Record<string, string> = {
   ceo: 'CEO',
@@ -42,7 +43,7 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['my-profile', user?.id],
+    queryKey: queryKeys.profile.byUserId(user?.id || ''),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
@@ -65,9 +66,20 @@ export default function Profile() {
         .update({ full_name: data.full_name, phone: data.phone || null })
         .eq('user_id', user!.id);
       if (error) throw error;
+      return { oldPhone: profile?.phone, newPhone: data.phone };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+    onSuccess: (data) => {
+      // Invalidate profile cache
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.byUserId(user!.id) });
+      
+      // If phone changed, invalidate driver-related queries
+      if (data.oldPhone !== data.newPhone) {
+        const driverKeys = driverInvalidationKeys.byPhone(data.oldPhone, data.newPhone);
+        driverKeys.forEach(key => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
+      }
+      
       setIsEditing(false);
       toast.success('Profile updated successfully');
     },
@@ -106,7 +118,8 @@ export default function Profile() {
         .eq('user_id', user.id);
       if (updateError) throw updateError;
 
-      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      // Invalidate profile cache to refresh avatar
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.byUserId(user.id) });
       toast.success('Profile photo updated');
     } catch (error: any) {
       toast.error(error.message || 'Failed to upload photo');
