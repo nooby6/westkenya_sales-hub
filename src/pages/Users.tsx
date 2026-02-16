@@ -32,7 +32,7 @@ import {
 import { UserCircle, Shield, Plus, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
-import { queryKeys, profileInvalidationKeys } from '@/lib/queryKeys';
+import { queryKeys } from '@/lib/queryKeys';
 
 type AppRole = Database['public']['Enums']['app_role'];
 
