@@ -66,7 +66,7 @@ export default function Profile() {
         .update({ full_name: data.full_name, phone: data.phone || null })
         .eq('user_id', user!.id);
       if (error) throw error;
-      return { oldPhone: profile?.phone, newPhone: data.phone };
+      return { oldPhone: profile?.phone, newPhone: data.phone || null };
     },
     onSuccess: (data) => {
       // Invalidate profile cache
