@@ -156,16 +156,3 @@ Kenya
 ## 🛠 Support & Maintenance
 
 Ongoing maintenance, feature enhancements, and integrations are provided by **Whrite Inc. LTD** under a separate agreement.
-
----
-
-##  Disclaimer
-
-This software is provided **“as is”**, without warranty of any kind, express or implied.
-
-Operational use is subject to:
-- Internal access controls  
-- Data governance policies  
-- Applicable Kenyan law  
-
----
