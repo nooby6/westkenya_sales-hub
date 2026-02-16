@@ -59,7 +59,7 @@ export default function DriverDeliveries() {
 
   // Fetch shipments assigned to this driver (by phone match)
   const { data: shipments, isLoading } = useQuery({
-    queryKey: queryKeys.shipments.byDriverPhone(profile?.phone || ''),
+    queryKey: ['driver-shipments', ...queryKeys.shipments.byDriverPhone(profile?.phone || '')],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shipments')
