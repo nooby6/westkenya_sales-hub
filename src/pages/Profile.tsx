@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserCircle, Phone, Mail, Loader2, Camera, Lock, AtSign } from 'lucide-react';
 import { toast } from 'sonner';
-import { queryKeys, profileInvalidationKeys, driverInvalidationKeys } from '@/lib/queryKeys';
+import { queryKeys, driverInvalidationKeys } from '@/lib/queryKeys';
 
 const roleLabels: Record<string, string> = {
   ceo: 'CEO',
