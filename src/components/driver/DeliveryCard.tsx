@@ -63,6 +63,12 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
     window.open(`https://www.google.com/maps/search/${encodedAddress}`, '_blank');
   };
 
+  const openWaze = () => {
+    if (!customerAddress) return;
+    const encodedAddress = encodeURIComponent(customerAddress);
+    window.open(`https://www.waze.com/ul?q=${encodedAddress}&navigate=yes`, '_blank');
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3">
@@ -106,14 +112,24 @@ export function DeliveryCard({ shipment, onStatusUpdate, onReportIncident, isUpd
         {customerAddress && (
           <div className="space-y-2">
             <DeliveryMap address={customerAddress} customerName={shipment.sales_orders?.customers?.name} />
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={openDirections}
-            >
-              <Navigation className="h-4 w-4" />
-              Open in Google Maps
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={openDirections}
+              >
+                <Navigation className="h-4 w-4" />
+                Google Maps
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={openWaze}
+              >
+                <Navigation className="h-4 w-4" />
+                Waze
+              </Button>
+            </div>
           </div>
         )}
 
