@@ -171,7 +171,7 @@ export default function Inventory() {
           ) : !filteredInventory || filteredInventory.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">No inventory items found</p>
+              <p className="text-muted-foreground">No inventory items found!</p>
             </div>
           ) : (
             <Table>
