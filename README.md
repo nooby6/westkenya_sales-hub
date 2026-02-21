@@ -1,4 +1,4 @@
-# Kabras Sugar – Sales Management System
+# West Kenya – Sales Management System
 
 A centralized, role-based Sales Management System designed to digitize and unify sales, inventory, logistics, and reporting operations for Kabras Sugar.
 
