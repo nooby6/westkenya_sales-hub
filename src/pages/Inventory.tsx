@@ -188,7 +188,7 @@ export default function Inventory() {
               </TableHeader>
               <TableBody>
                 {filteredInventory.map((item) => {
-                  const status = getStockStatus(item.quantity, item.products?.min_stock_level || 0);
+                  const status = getStockStatus(item.quantity,  item.products?.min_stock_level || 0);
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.products?.name}</TableCell>
