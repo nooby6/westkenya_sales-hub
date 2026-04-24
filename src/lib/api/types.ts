@@ -59,3 +59,13 @@ export interface CreateOrderResponse {
   total_amount: number;
   order_date: string;
 }
+
+export interface BackendLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface BackendTokenResponse {
+  access_token: string;
+  token_type: string;
+}

@@ -18,6 +18,10 @@ export const setApiAccessToken = (token: string) => {
   localStorage.setItem('api_access_token', token);
 };
 
+export const clearApiAccessToken = () => {
+  localStorage.removeItem('api_access_token');
+};
+
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const headers = new Headers(init?.headers);

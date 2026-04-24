@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { authApi } from '@/lib/api/auth';
+import { clearApiAccessToken, setApiAccessToken } from '@/lib/api/client';
 
 type AppRole = 'ceo' | 'manager' | 'supervisor' | 'sales_rep' | 'driver';
 
@@ -80,7 +82,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+    if (error) {
+      return { error };
+    }
+
+    try {
+      const token = await authApi.login({ email, password });
+      setApiAccessToken(token.access_token);
+      return { error: null };
+    } catch (backendError) {
+      await supabase.auth.signOut();
+      clearApiAccessToken();
+
+      const normalizedError =
+        backendError instanceof Error
+          ? backendError
+          : new Error('Signed in to Supabase but backend login failed');
+
+      return { error: normalizedError };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
@@ -98,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    clearApiAccessToken();
     setRole(null);
   };
 
