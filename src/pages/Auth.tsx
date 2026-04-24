@@ -40,24 +40,15 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
+    setLoginError('');
     setIsSubmitting(true);
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-    };
-
+    const data = { email: loginEmail, password: loginPassword };
     const result = loginSchema.safeParse(data);
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach(err => {
-        if (err.path[0]) fieldErrors[err.path[0].toString()] = err.message;
-      });
-      setErrors(fieldErrors);
+      setLoginError(result.error.errors[0]?.message || 'Invalid input');
       setIsSubmitting(false);
       return;
     }
@@ -66,7 +57,9 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (error) {
-      toast.error(error.message || 'Failed to sign in');
+      const msg = error.message || 'Failed to sign in';
+      setLoginError(msg);
+      toast.error(msg);
     } else {
       toast.success('Welcome back!');
       navigate('/dashboard');
