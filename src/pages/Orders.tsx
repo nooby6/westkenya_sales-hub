@@ -51,9 +51,6 @@ export default function Orders() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [depotFilter, setDepotFilter] = useState<string>('all');
-  const [productFilter, setProductFilter] = useState<string>('all');
-  const [quantityFilter, setQuantityFilter] = useState<string>('all');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedDepotId, setSelectedDepotId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -69,14 +66,8 @@ export default function Orders() {
   };
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['orders', statusFilter, depotFilter, productFilter, quantityFilter],
-    queryFn: () =>
-      ordersApi.list({
-        statusFilter,
-        depotId: depotFilter,
-        productId: productFilter,
-        quantity: quantityFilter,
-      }),
+    queryKey: ['orders', statusFilter],
+    queryFn: () => ordersApi.list(statusFilter),
   });
 
   const { data: customers } = useQuery({
@@ -84,19 +75,14 @@ export default function Orders() {
     queryFn: ordersApi.customers,
   });
 
-  const { data: depots, isLoading: depotsLoading } = useQuery({
+  const { data: depots } = useQuery({
     queryKey: ['depots'],
     queryFn: ordersApi.depots,
   });
 
-  const { data: products, isLoading: productsLoading } = useQuery({
+  const { data: products } = useQuery({
     queryKey: ['products'],
     queryFn: ordersApi.products,
-  });
-
-  const { data: quantities } = useQuery({
-    queryKey: ['order-quantities'],
-    queryFn: ordersApi.quantities,
   });
 
   const createOrderMutation = useMutation({
@@ -212,10 +198,6 @@ export default function Orders() {
                     <SelectValue placeholder="Select depot" />
                   </SelectTrigger>
                   <SelectContent>
-                    {depotsLoading && <SelectItem value="loading-depots" disabled>Loading depots...</SelectItem>}
-                    {!depotsLoading && (!depots || depots.length === 0) && (
-                      <SelectItem value="no-depots" disabled>No depots available</SelectItem>
-                    )}
                     {depots?.map(depot => (
                       <SelectItem key={depot.id} value={depot.id}>
                         {depot.name}
@@ -231,10 +213,6 @@ export default function Orders() {
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
                   <SelectContent>
-                    {productsLoading && <SelectItem value="loading-products" disabled>Loading products...</SelectItem>}
-                    {!productsLoading && (!products || products.length === 0) && (
-                      <SelectItem value="no-products" disabled>No products available</SelectItem>
-                    )}
                     {products?.map(product => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name} - KES {Number(product.unit_price).toLocaleString()}
@@ -245,21 +223,14 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Select value={orderQuantity} onValueChange={setOrderQuantity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select quantity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 100 }, (_, index) => {
-                      const quantity = String(index + 1);
-                      return (
-                        <SelectItem key={quantity} value={quantity}>
-                          {quantity}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <Input
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  required
+                  value={orderQuantity}
+                  onChange={(e) => setOrderQuantity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Notes (Optional)</Label>
@@ -293,7 +264,7 @@ export default function Orders() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_180px]">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -315,45 +286,6 @@ export default function Orders() {
                 <SelectItem value="dispatched">Dispatched</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={productFilter} onValueChange={setProductFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Filter by product" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                {products?.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={quantityFilter} onValueChange={setQuantityFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Filter by quantity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Quantities</SelectItem>
-                {quantities?.map((quantity) => (
-                  <SelectItem key={quantity.value} value={String(quantity.value)}>
-                    {quantity.value}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={depotFilter} onValueChange={setDepotFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Filter by depot" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Depots</SelectItem>
-                {depots?.map((depot) => (
-                  <SelectItem key={depot.id} value={depot.id}>
-                    {depot.name}
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>
