@@ -47,6 +47,7 @@ async def list_orders(
         statement = statement.where(SalesOrder.depot_id == depot_id)
     if product_id is not None or quantity is not None:
         statement = statement.join(OrderItem, OrderItem.order_id == SalesOrder.id)
+        statement = statement.distinct(SalesOrder.id)
     if product_id is not None:
         statement = statement.where(OrderItem.product_id == product_id)
     if quantity is not None:
