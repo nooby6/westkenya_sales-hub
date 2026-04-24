@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
@@ -18,11 +18,18 @@ from app.schemas.order import (
     OrderCreateResponse,
     OrderListItem,
     ProductLookup,
+    QuantityLookup,
 )
 from app.services.inventory_service import ensure_and_deduct, get_products_map
 
 
-async def list_orders(session: AsyncSession, status_filter: OrderStatus | None) -> list[OrderListItem]:
+async def list_orders(
+    session: AsyncSession,
+    status_filter: OrderStatus | None,
+    depot_id: str | None = None,
+    product_id: str | None = None,
+    quantity: int | None = None,
+) -> list[OrderListItem]:
     statement = (
         select(
             SalesOrder,
@@ -36,6 +43,14 @@ async def list_orders(session: AsyncSession, status_filter: OrderStatus | None) 
     )
     if status_filter is not None:
         statement = statement.where(SalesOrder.status == status_filter)
+    if depot_id is not None:
+        statement = statement.where(SalesOrder.depot_id == depot_id)
+    if product_id is not None or quantity is not None:
+        statement = statement.join(OrderItem, OrderItem.order_id == SalesOrder.id)
+    if product_id is not None:
+        statement = statement.where(OrderItem.product_id == product_id)
+    if quantity is not None:
+        statement = statement.where(OrderItem.quantity == quantity)
 
     rows = (await session.execute(statement)).all()
     return [
@@ -73,6 +88,13 @@ async def list_products(session: AsyncSession) -> list[ProductLookup]:
         await session.execute(select(Product).where(Product.is_active.is_(True)).order_by(Product.name.asc()))
     ).scalars().all()
     return [ProductLookup(id=p.id, name=p.name, unit_price=float(p.unit_price)) for p in products]
+
+
+async def list_quantities(session: AsyncSession) -> list[QuantityLookup]:
+    quantities = (
+        await session.execute(select(distinct(OrderItem.quantity)).order_by(OrderItem.quantity.asc()))
+    ).scalars().all()
+    return [QuantityLookup(value=quantity) for quantity in quantities if quantity is not None]
 
 
 def _build_order_number() -> str:
