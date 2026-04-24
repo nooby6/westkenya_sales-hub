@@ -47,6 +47,10 @@ class ProductLookup(BaseModel):
     unit_price: float
 
 
+class QuantityLookup(BaseModel):
+    value: int
+
+
 class OrderListItem(BaseModel):
     id: str
     order_number: str
