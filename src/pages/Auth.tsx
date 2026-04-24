@@ -141,38 +141,18 @@ export default function Auth() {
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      name="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      required
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-destructive">{errors.email}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                    />
-                    {errors.password && (
-                      <p className="text-sm text-destructive">{errors.password}</p>
-                    )}
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
+              <TabsContent value="login" className="mt-4">
+                <SignIn2
+                  email={loginEmail}
+                  password={loginPassword}
+                  onEmailChange={setLoginEmail}
+                  onPasswordChange={setLoginPassword}
+                  onSubmit={handleLogin}
+                  isSubmitting={isSubmitting}
+                  error={loginError}
+                  title="Sign in with email"
+                  subtitle="Welcome back to Kabras Sales Management."
+                />
               </TabsContent>
 
               <TabsContent value="signup">
