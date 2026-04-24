@@ -84,12 +84,12 @@ export default function Orders() {
     queryFn: ordersApi.customers,
   });
 
-  const { data: depots } = useQuery({
+  const { data: depots, isLoading: depotsLoading } = useQuery({
     queryKey: ['depots'],
     queryFn: ordersApi.depots,
   });
 
-  const { data: products } = useQuery({
+  const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ['products'],
     queryFn: ordersApi.products,
   });
@@ -212,6 +212,10 @@ export default function Orders() {
                     <SelectValue placeholder="Select depot" />
                   </SelectTrigger>
                   <SelectContent>
+                    {depotsLoading && <SelectItem value="loading-depots" disabled>Loading depots...</SelectItem>}
+                    {!depotsLoading && (!depots || depots.length === 0) && (
+                      <SelectItem value="no-depots" disabled>No depots available</SelectItem>
+                    )}
                     {depots?.map(depot => (
                       <SelectItem key={depot.id} value={depot.id}>
                         {depot.name}
@@ -227,6 +231,10 @@ export default function Orders() {
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
                   <SelectContent>
+                    {productsLoading && <SelectItem value="loading-products" disabled>Loading products...</SelectItem>}
+                    {!productsLoading && (!products || products.length === 0) && (
+                      <SelectItem value="no-products" disabled>No products available</SelectItem>
+                    )}
                     {products?.map(product => (
                       <SelectItem key={product.id} value={product.id}>
                         {product.name} - KES {Number(product.unit_price).toLocaleString()}
@@ -237,14 +245,21 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input
-                  name="quantity"
-                  type="number"
-                  min="1"
-                  required
-                  value={orderQuantity}
-                  onChange={(e) => setOrderQuantity(e.target.value)}
-                />
+                <Select value={orderQuantity} onValueChange={setOrderQuantity}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select quantity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 100 }, (_, index) => {
+                      const quantity = String(index + 1);
+                      return (
+                        <SelectItem key={quantity} value={quantity}>
+                          {quantity}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Notes (Optional)</Label>
