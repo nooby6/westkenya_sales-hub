@@ -13,12 +13,14 @@ from app.schemas.order import (
     OrderListItem,
     OrderStatusUpdateRequest,
     ProductLookup,
+    QuantityLookup,
 )
 from app.services.order_service import (
     list_customers,
     list_depots,
     list_orders,
     list_products,
+    list_quantities,
     process_order,
     update_order_status,
 )
@@ -29,11 +31,20 @@ router = APIRouter()
 @router.get("", response_model=list[OrderListItem])
 async def get_orders(
     status_filter: OrderStatus | None = None,
+    depot_id: str | None = None,
+    product_id: str | None = None,
+    quantity: int | None = None,
     current_user: AuthenticatedUser = Depends(require_permission("order:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> list[OrderListItem]:
     _ = current_user
-    return await list_orders(session=session, status_filter=status_filter)
+    return await list_orders(
+        session=session,
+        status_filter=status_filter,
+        depot_id=depot_id,
+        product_id=product_id,
+        quantity=quantity,
+    )
 
 
 @router.get("/lookups/customers", response_model=list[CustomerLookup])
@@ -61,6 +72,15 @@ async def get_products(
 ) -> list[ProductLookup]:
     _ = current_user
     return await list_products(session)
+
+
+@router.get("/lookups/quantities", response_model=list[QuantityLookup])
+async def get_quantities(
+    current_user: AuthenticatedUser = Depends(require_permission("order:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[QuantityLookup]:
+    _ = current_user
+    return await list_quantities(session)
 
 
 @router.post("", response_model=OrderCreateResponse)

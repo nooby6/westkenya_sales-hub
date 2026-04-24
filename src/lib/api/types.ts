@@ -37,6 +37,10 @@ export interface LookupProduct {
   unit_price: number;
 }
 
+export interface LookupQuantity {
+  value: number;
+}
+
 export interface CreateOrderRequest {
   customer_id: string;
   depot_id: string;
