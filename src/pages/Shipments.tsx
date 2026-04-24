@@ -494,7 +494,7 @@ export default function Shipments() {
                           value={shipment.status}
                           onValueChange={(status) => updateStatusMutation.mutate({
                             id: shipment.id,
-                            status,
+                            status: status as 'pending' | 'loading' | 'in_transit' | 'delivered',
                             orderId: shipment.order_id
                           })}
                         >
