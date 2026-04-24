@@ -206,6 +206,36 @@ export default function Auth() {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
+                  <div className="flex flex-col items-center space-y-3 pb-2">
+                    <Label className="self-start">Profile Picture <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <Avatar className="h-24 w-24 border-2 border-border">
+                        <AvatarImage src={avatarPreview} alt="Profile preview" />
+                        <AvatarFallback className="bg-muted">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-primary-foreground shadow-md hover:bg-primary/90 transition"
+                        aria-label="Upload profile picture"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarSelect}
+                    />
+                    <p className="text-xs text-muted-foreground">JPG, PNG or WebP — max 5MB</p>
+                    {errors.avatar && (
+                      <p className="text-sm text-destructive">{errors.avatar}</p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
                     <Input
