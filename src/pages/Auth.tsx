@@ -94,7 +94,6 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
-    setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -105,29 +104,54 @@ export default function Auth() {
     };
 
     const result = signupSchema.safeParse(data);
+    const fieldErrors: Record<string, string> = {};
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach(err => {
         if (err.path[0]) fieldErrors[err.path[0].toString()] = err.message;
       });
+    }
+    if (!avatarFile) {
+      fieldErrors.avatar = 'Profile picture is required';
+    }
+    if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
-      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(true);
     const { error } = await signUp(data.email, data.password, data.fullName);
-    setIsSubmitting(false);
 
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('already registered')) {
         toast.error('An account with this email already exists');
       } else {
         toast.error(error.message || 'Failed to create account');
       }
-    } else {
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      return;
     }
+
+    // Upload avatar after successful signup
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (userId && avatarFile) {
+        const ext = avatarFile.name.split('.').pop();
+        const path = `${userId}/avatar.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+        if (!uploadError) {
+          await supabase.from('profiles').update({ avatar_url: path }).eq('user_id', userId);
+        }
+      }
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+    }
+
+    setIsSubmitting(false);
+    toast.success('Account created successfully!');
+    navigate('/dashboard');
   };
 
   if (loading) {
