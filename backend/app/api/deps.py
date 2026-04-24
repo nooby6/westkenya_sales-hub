@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.core.config import settings
+from app.models.enums import AppRole
 from app.schemas.auth import AuthenticatedUser
 
 bearer_scheme = HTTPBearer(auto_error=True)
@@ -28,5 +29,12 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Malformed authentication token.",
         )
+    try:
+        parsed_role = AppRole(role)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid role in authentication token.",
+        ) from exc
 
-    return AuthenticatedUser(user_id=user_id, email=email, role=role)
+    return AuthenticatedUser(user_id=user_id, email=email, role=parsed_role)

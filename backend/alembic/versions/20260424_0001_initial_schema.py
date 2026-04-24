@@ -151,6 +151,41 @@ def upgrade() -> None:
     op.create_index("ix_audit_logs_entity_type", "audit_logs", ["entity_type"], unique=False)
     op.create_index("ix_audit_logs_entity_id", "audit_logs", ["entity_id"], unique=False)
 
+    op.execute(
+        """
+        INSERT INTO customers (id, name, company_name, is_active)
+        VALUES
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af001', 'Kakamega Traders', 'Kakamega Traders Ltd', true),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af002', 'Mumias Wholesalers', 'Mumias Wholesalers', true);
+        """
+    )
+    op.execute(
+        """
+        INSERT INTO depots (id, name, is_active)
+        VALUES
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af101', 'Main Depot', true),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af102', 'Kisumu Depot', true);
+        """
+    )
+    op.execute(
+        """
+        INSERT INTO products (id, name, unit_price, is_active)
+        VALUES
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af201', 'Kabras Sugar 50kg', 6500.00, true),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af202', 'Kabras Sugar 25kg', 3350.00, true);
+        """
+    )
+    op.execute(
+        """
+        INSERT INTO inventory (id, depot_id, product_id, quantity)
+        VALUES
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af301', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af101', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af201', 300),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af302', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af101', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af202', 450),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af303', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af102', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af201', 200),
+            ('0f47d8b6-f5b5-4d70-aef5-8ad8f62af304', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af102', '0f47d8b6-f5b5-4d70-aef5-8ad8f62af202', 220);
+        """
+    )
+
 
 def downgrade() -> None:
     op.drop_index("ix_audit_logs_entity_id", table_name="audit_logs")
