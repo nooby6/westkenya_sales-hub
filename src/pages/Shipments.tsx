@@ -168,7 +168,7 @@ export default function Shipments() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, orderId }: { id: string; status: string; orderId: string }) => {
-      const updateData: Record<string, unknown> = { status };
+      const updateData: { status: string; dispatched_at?: string; delivered_at?: string } = { status };
       if (status === 'in_transit') {
         updateData.dispatched_at = new Date().toISOString();
       }
