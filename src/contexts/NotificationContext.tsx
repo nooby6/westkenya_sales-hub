@@ -169,10 +169,48 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       )
       .subscribe();
 
+    // Generic realtime invalidation for additional tables
+    const genericChannel = supabase
+      .channel('generic-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['customers'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'depots' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['depots'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sales_returns' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['sales-returns'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_incidents' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['order-items'] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_transactions' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+        queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(inventoryChannel);
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(shipmentsChannel);
+      supabase.removeChannel(genericChannel);
     };
   }, [queryClient, addNotification]);
 

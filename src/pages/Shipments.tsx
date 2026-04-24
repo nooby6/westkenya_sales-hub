@@ -167,8 +167,8 @@ export default function Shipments() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status, orderId }: { id: string; status: string; orderId: string }) => {
-      const updateData: Record<string, unknown> = { status };
+    mutationFn: async ({ id, status, orderId }: { id: string; status: 'pending' | 'loading' | 'in_transit' | 'delivered'; orderId: string }) => {
+      const updateData: { status: typeof status; dispatched_at?: string; delivered_at?: string } = { status };
       if (status === 'in_transit') {
         updateData.dispatched_at = new Date().toISOString();
       }
@@ -494,7 +494,7 @@ export default function Shipments() {
                           value={shipment.status}
                           onValueChange={(status) => updateStatusMutation.mutate({
                             id: shipment.id,
-                            status,
+                            status: status as 'pending' | 'loading' | 'in_transit' | 'delivered',
                             orderId: shipment.order_id
                           })}
                         >
