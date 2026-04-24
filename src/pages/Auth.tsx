@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,10 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Camera, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 import kabrasLogo from '@/assets/kabras-logo.png';
 import { SignIn2 } from '@/components/ui/clean-minimal-sign-in';
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -33,12 +39,31 @@ export default function Auth() {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && user) {
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error('Please upload a JPG, PNG, or WebP image');
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+    setErrors(prev => ({ ...prev, avatar: '' }));
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +94,6 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrors({});
-    setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -80,29 +104,54 @@ export default function Auth() {
     };
 
     const result = signupSchema.safeParse(data);
+    const fieldErrors: Record<string, string> = {};
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach(err => {
         if (err.path[0]) fieldErrors[err.path[0].toString()] = err.message;
       });
+    }
+    if (!avatarFile) {
+      fieldErrors.avatar = 'Profile picture is required';
+    }
+    if (Object.keys(fieldErrors).length > 0) {
       setErrors(fieldErrors);
-      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(true);
     const { error } = await signUp(data.email, data.password, data.fullName);
-    setIsSubmitting(false);
 
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('already registered')) {
         toast.error('An account with this email already exists');
       } else {
         toast.error(error.message || 'Failed to create account');
       }
-    } else {
-      toast.success('Account created successfully!');
-      navigate('/dashboard');
+      return;
     }
+
+    // Upload avatar after successful signup
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (userId && avatarFile) {
+        const ext = avatarFile.name.split('.').pop();
+        const path = `${userId}/avatar.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
+        if (!uploadError) {
+          await supabase.from('profiles').update({ avatar_url: path }).eq('user_id', userId);
+        }
+      }
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+    }
+
+    setIsSubmitting(false);
+    toast.success('Account created successfully!');
+    navigate('/dashboard');
   };
 
   if (loading) {
@@ -157,6 +206,36 @@ export default function Auth() {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
+                  <div className="flex flex-col items-center space-y-3 pb-2">
+                    <Label className="self-start">Profile Picture <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <Avatar className="h-24 w-24 border-2 border-border">
+                        <AvatarImage src={avatarPreview} alt="Profile preview" />
+                        <AvatarFallback className="bg-muted">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-primary-foreground shadow-md hover:bg-primary/90 transition"
+                        aria-label="Upload profile picture"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleAvatarSelect}
+                    />
+                    <p className="text-xs text-muted-foreground">JPG, PNG or WebP — max 5MB</p>
+                    {errors.avatar && (
+                      <p className="text-sm text-destructive">{errors.avatar}</p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
                     <Input
