@@ -51,6 +51,19 @@ export default function Orders() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [selectedDepotId, setSelectedDepotId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [orderQuantity, setOrderQuantity] = useState('1');
+  const [orderNotes, setOrderNotes] = useState('');
+
+  const resetCreateOrderForm = () => {
+    setSelectedCustomerId('');
+    setSelectedDepotId('');
+    setSelectedProductId('');
+    setOrderQuantity('1');
+    setOrderNotes('');
+  };
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['orders', statusFilter],
@@ -84,6 +97,7 @@ export default function Orders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       setIsCreateOpen(false);
+      resetCreateOrderForm();
       toast.success('Order created successfully');
     },
     onError: (error) => {
@@ -106,25 +120,29 @@ export default function Orders() {
 
   const handleCreateOrder = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    const customer_id = formData.get('customer_id') as string;
-    const depot_id = formData.get('depot_id') as string;
-    const notes = formData.get('notes') as string;
-    const product_id = formData.get('product_id') as string;
-    const quantity = Number(formData.get('quantity'));
-    
-    const product = products?.find(p => p.id === product_id);
+
+    if (!selectedCustomerId || !selectedDepotId || !selectedProductId) {
+      toast.error('Please select a customer, depot, and product');
+      return;
+    }
+
+    const quantity = Number(orderQuantity);
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+
+    const product = products?.find(p => p.id === selectedProductId);
     if (!product) {
       toast.error('Please select a product');
       return;
     }
 
     createOrderMutation.mutate({
-      customer_id,
-      depot_id,
-      notes,
-      items: [{ product_id, quantity, unit_price: Number(product.unit_price) }],
+      customer_id: selectedCustomerId,
+      depot_id: selectedDepotId,
+      notes: orderNotes.trim() || undefined,
+      items: [{ product_id: selectedProductId, quantity, unit_price: Number(product.unit_price) }],
     });
   };
 
@@ -140,7 +158,13 @@ export default function Orders() {
           <h1 className="text-2xl font-bold text-foreground">Sales Orders</h1>
           <p className="text-muted-foreground">Manage and track all sales orders</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog
+          open={isCreateOpen}
+          onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) resetCreateOrderForm();
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -154,7 +178,7 @@ export default function Orders() {
             <form onSubmit={handleCreateOrder} className="space-y-4">
               <div className="space-y-2">
                 <Label>Customer</Label>
-                <Select name="customer_id" required>
+                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
@@ -169,7 +193,7 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Depot</Label>
-                <Select name="depot_id" required>
+                <Select value={selectedDepotId} onValueChange={setSelectedDepotId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select depot" />
                   </SelectTrigger>
@@ -184,7 +208,7 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Product</Label>
-                <Select name="product_id" required>
+                <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
@@ -199,14 +223,33 @@ export default function Orders() {
               </div>
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input name="quantity" type="number" min="1" defaultValue="1" required />
+                <Input
+                  name="quantity"
+                  type="number"
+                  min="1"
+                  required
+                  value={orderQuantity}
+                  onChange={(e) => setOrderQuantity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Notes (Optional)</Label>
-                <Textarea name="notes" placeholder="Add any special instructions..." />
+                <Textarea
+                  name="notes"
+                  placeholder="Add any special instructions..."
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                />
               </div>
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                    resetCreateOrderForm();
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createOrderMutation.isPending}>
