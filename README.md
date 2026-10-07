@@ -1,158 +1,96 @@
-# Kabras Sugar – Sales Management System
+# West Kenya Sales Hub
 
-A centralized, role-based Sales Management System designed to digitize and unify sales, inventory, logistics, and reporting operations for Kabras Sugar.
+A role-based sales and logistics management platform built for field operations, bringing sales, inventory, shipping, delivery tracking, reporting, and operational visibility into one system.
 
-Developed and maintained by **Whrite Inc. LTD**.
+Developed by **Whrite Inc. LTD**.
 
----
+## What it solves
 
-##  Overview
+Sales and distribution teams often work across disconnected spreadsheets, messages, and manual reporting workflows. West Kenya Sales Hub centralizes those workflows so teams can work from the same operational data.
 
-The Kabras Sugar Sales Management System replaces fragmented and manual sales workflows with a single, secure, and scalable digital platform.
+The system is designed around the day-to-day lifecycle of a sale:
 
-The system provides end-to-end visibility and control over:
-- Sales orders  
-- Inventory across multiple depots  
-- Shipping and delivery operations  
-- Reporting and analytics  
-- Role-based access control  
+**Order → Stock → Dispatch → Delivery → Reporting**
 
-It is built for operational accuracy, transparency, and long-term scalability.
+## Core capabilities
 
----
+### Sales
+- Create and manage sales orders
+- Track order status
+- Validate orders against operational data
+- Maintain visibility across sales activity
 
-##  Core Features
+### Inventory
+- Track stock across depots
+- Monitor stock movement
+- Surface low-stock and overstock conditions
+- Connect inventory data to sales and fulfillment workflows
 
-### Sales Management
-- Create, edit, and track sales orders  
-- Automatic validation against inventory and pricing rules  
-- Real-time order status updates  
+### Shipping & delivery
+- Track shipments from dispatch through delivery
+- Assign deliveries to drivers
+- Maintain driver identification details
+- Record vehicle information
+- Track delivery status and proof of delivery
 
-### Inventory Management
-- Live stock tracking across multiple depots  
-- Automated inventory adjustments  
-- Low-stock and overstock visibility  
+### Reporting
+- Operational dashboards
+- Sales and inventory visualizations
+- Shipment and fulfillment metrics
+- PDF reports
+- Excel-compatible reporting workflows
+- Date-based reporting
 
-### Shipping & Logistics
-- Shipment tracking from dispatch to delivery  
-- Driver verification per shipment:
-  - Full name  
-  - ID number  
-  - Vehicle number plate  
-  - Driver photo  
-- Delivery status updates and proof of delivery  
+### Role-based access
 
-### Reporting & Visualizations
-- Role-based dashboards with charts and tables  
-- Sales trends, inventory turnover, and fulfillment metrics  
-- Exportable reports:
-  - **PDF** (daily, weekly, monthly, custom date ranges)  
-  - **Excel** (sales, inventory, shipments)  
+The application is structured around operational roles with different access scopes:
 
-### Role-Based Access Control (RBAC)
-- Driver  
-- Sales Representative  
-- Supervisor  
-- Manager  
-- CEO  
+| Role | Primary access |
+| --- | --- |
+| Driver | Assigned deliveries |
+| Sales Representative | Orders, stock visibility, delivery scheduling |
+| Supervisor | Operational corrections, reporting, user management |
+| Manager | Full operational visibility |
+| CEO | Complete system access |
 
-Each role has strictly enforced permissions.
+Sensitive operations are intended to remain restricted to the roles that need them.
 
----
+## Technology
 
-##  User Roles Summary
+The current application is a modern TypeScript frontend backed by Supabase services.
 
-| Role | Access Scope |
-|-----|------------|
-| Driver | Assigned deliveries only |
-| Sales Representative | Orders, stock (read-only), delivery scheduling |
-| Supervisor | Order corrections, reporting, user management |
-| Manager | Full operational visibility and control |
-| CEO | Complete system access and strategic oversight |
+- **Frontend:** React
+- **Language:** TypeScript
+- **Build:** Vite
+- **Backend services / data:** Supabase
+- **Database:** PostgreSQL
+- **UI:** Tailwind CSS, Radix UI, Lucide
+- **Forms & validation:** React Hook Form, Zod
+- **Data fetching:** TanStack Query
+- **Maps:** Leaflet / React Leaflet
+- **Reporting:** jsPDF and AutoTable
+- **Testing:** Vitest, Testing Library
 
-All sensitive actions are logged for audit purposes.
+## Engineering focus
 
----
+The project is organized around real operational requirements rather than a generic CRUD demonstration:
 
-##  Techn Stack (Indicative)
+- Role-aware workflows
+- Relational operational data
+- Inventory and fulfillment state
+- Delivery tracking
+- Reporting and exports
+- Authentication and access control
+- Operational dashboards
+- Extensible integrations
 
-- **Backend:** Node.js / Python (FastAPI) / Go  
-- **Frontend:** React / Vue.js  
-- **Database:** PostgreSQL / MySQL  
-- **Storage:** Secure object storage for images and documents  
-- **Authentication:** Role-based access with secure authentication  
-- **Reporting:** PDF and Excel generation  
+## Project status
 
----
+This repository contains the application used to demonstrate the system's architecture and workflows. Client-specific data, credentials, branding, and deployment configuration are not included.
 
-##  Deployment
+## Ownership
 
-The system supports:
-- Cloud or on-premise deployment  
-- Horizontal scaling  
-- Multi-depot expansion  
-- Future ERP and accounting integrations  
+Developed by **Whrite Inc. LTD**, Kenya.
 
----
+Client-specific information and configurations remain the property of their respective owners.
 
-##  Security & Compliance
-
-- Strict role-based access enforcement  
-- Immutable audit logs for sensitive actions  
-- Controlled data exposure per user role  
-- Secure handling of personally identifiable information (PII)  
-
----
-
-##  Legal & Regulatory Considerations (Kenya)
-
-This system is designed to operate within the Kenyan legal environment, including compliance with:
-
-- **Kenya Data Protection Act, 2019**
-
-Key considerations:
-- Personal data (e.g. driver ID details and photos) is processed lawfully  
-- Data access is limited strictly by role  
-- Data is used solely for operational and business purposes  
-
-System operators are responsible for ensuring ongoing compliance with:
-- Kenya Data Protection Act  
-- Internal company data governance policies  
-- Industry regulations applicable to sugar manufacturing and distribution  
-
----
-
-##  Licensing
-
-### Software License
-
-This project is licensed under the **MIT License**, permitting commercial use, modification, distribution, and private use under the license terms.
-
-See the `LICENSE` file for full details.
-
----
-
-### Intellectual Property
-
-All source code, system architecture, and documentation are:
-
-© **Whrite Inc. LTD**, Kenya.  
-All rights reserved unless otherwise stated under the MIT License.
-
-Client-specific data, branding, and configurations remain the property of their respective owners.
-
----
-
-## 🏢 Attribution
-
-Developed by:
-
-**Whrite Inc. LTD**  
-Software Engineering & Digital Systems  
-Kenya
-
----
-
-## 🛠 Support & Maintenance
-
-Ongoing maintenance, feature enhancements, and integrations are provided by **Whrite Inc. LTD** under a separate agreement.

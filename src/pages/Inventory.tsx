@@ -171,7 +171,7 @@ export default function Inventory() {
           ) : !filteredInventory || filteredInventory.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">No inventory items found</p>
+              <p className="text-muted-foreground">No inventory items found!</p>
             </div>
           ) : (
             <Table>
@@ -188,7 +188,7 @@ export default function Inventory() {
               </TableHeader>
               <TableBody>
                 {filteredInventory.map((item) => {
-                  const status = getStockStatus(item.quantity, item.products?.min_stock_level || 0);
+                  const status = getStockStatus(item.quantity,  item.products?.min_stock_level || 0);
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.products?.name}</TableCell>

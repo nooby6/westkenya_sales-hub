@@ -82,7 +82,7 @@ export default function DriverDeliveries() {
   // Update shipment status
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: ShipmentStatus }) => {
-      const updates: Record<string, unknown> = { status };
+      const updates: { status: ShipmentStatus; dispatched_at?: string; delivered_at?: string } = { status };
       
       if (status === 'in_transit') {
         updates.dispatched_at = new Date().toISOString();
